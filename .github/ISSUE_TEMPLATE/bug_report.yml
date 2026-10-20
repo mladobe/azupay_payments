@@ -1,0 +1,41 @@
+name: Bug report
+description: Report a reproducible, redacted software defect.
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Do not report vulnerabilities here. Use SECURITY.md and a private channel.
+        Never include keys, .env/.aio, workspace exports, raw HAR files, signed
+        receipts, cart/customer identifiers, bank details or activation payloads.
+  - type: input
+    id: versions
+    attributes:
+      label: Application, EDS installer, Node and storefront versions
+    validations:
+      required: true
+  - type: dropdown
+    id: presentation
+    attributes:
+      label: Checkout presentation
+      options:
+        - Full redirect
+        - Modal
+        - Not applicable
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Safe reproduction steps
+      description: Use dummy data and identify UAT vs production without customer/account identifiers.
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected and actual behavior
+    validations:
+      required: true
+  - type: textarea
+    id: diagnostics
+    attributes:
+      label: Redacted diagnostics
+      description: Error codes and relevant versions only; no tokens, full payloads or screenshots containing private data.

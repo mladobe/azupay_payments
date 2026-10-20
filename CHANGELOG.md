@@ -1,0 +1,41 @@
+# Changelog
+
+Changes are grouped by implementation version. These entries describe local
+development history, not previously published GitHub releases or certification.
+The first public release is pending ownership/licence approval and acceptance.
+
+## Unreleased
+
+- Standardized merchant installation guide, contributor and security policies.
+- Public-repository checks, credential-free CI and draft release preparation.
+- App Builder metadata uses the same version as the package and EDS installer.
+- Project licence explicitly pending approval; public release checks block it.
+
+## 0.1.5
+
+- Optional store-scoped modal checkout, retaining full redirect as the default.
+- Same-payment full-page escape, retained sessions on close, server-verified
+  status checks and an explicit final native order-confirmation click.
+- Accessible dialog/focus restoration and mobile layout; automated tests use
+  mocked provider/server boundaries, not a certified real-bank modal journey.
+- Reviewed EDS upgrades from 0.1.0 through 0.1.4. Intermediate 0.1.3/0.1.4
+  builds were local modal validation iterations.
+
+## 0.1.2
+
+- Store-scoped checkout title, byline and up to three custom hosted images.
+- Permission-gated official PayID/PayTo image references.
+- GraphQL branding hook and reviewed EDS initializer migration.
+
+## 0.1.1
+
+- Persistent five-minute invoice reconciliation timer and rule.
+- Clearer Complete your order messaging for returning payment sessions.
+- Reviewed upgrade from the initial EDS installation.
+
+## 0.1.0
+
+- Initial App Builder/ACCS PayID and one-off PayTo integration.
+- Trusted Commerce quote binding, provider verification and signed receipts.
+- Native configuration, hosted redirect checkout and reusable EDS installer.
+- Manual/optional scheduled offline invoicing and operational runbooks.

@@ -1,0 +1,145 @@
+hooks:
+  pre-app-build: EXTENSION=extensibility/1 npx aio-commerce-lib-app hooks pre-app-build
+  build-actions: ./scripts/configure-app-config-compatibility.cjs
+  post-app-deploy: EXTENSION=extensibility/1 npx aio-commerce-lib-app hooks post-app-deploy
+
+runtimeManifest:
+  packages:
+    azupay:
+      license: Apache-2.0
+      triggers:
+        reconcile-timer:
+          feed: /whisk.system/alarms/interval
+          inputs:
+            minutes: 5
+      rules:
+        reconcile-rule:
+          trigger: reconcile-timer
+          action: reconcile
+      inputs:
+        AZUPAY_SIGNING_SECRET: $AZUPAY_SIGNING_SECRET
+        AZUPAY_ALLOW_PRODUCTION: $AZUPAY_ALLOW_PRODUCTION
+        AZUPAY_STOREFRONT_ORIGINS: $AZUPAY_STOREFRONT_ORIGINS
+        AZUPAY_CHECKOUT_HOSTS: $AZUPAY_CHECKOUT_HOSTS
+        AZUPAY_UAT_PAYID_CLIENT_ID: $AZUPAY_UAT_PAYID_CLIENT_ID
+        AZUPAY_UAT_PAYID_API_KEY: $AZUPAY_UAT_PAYID_API_KEY
+        AZUPAY_UAT_PAYTO_CLIENT_ID: $AZUPAY_UAT_PAYTO_CLIENT_ID
+        AZUPAY_UAT_PAYTO_API_KEY: $AZUPAY_UAT_PAYTO_API_KEY
+        AZUPAY_UAT_BOTH_CLIENT_ID: $AZUPAY_UAT_BOTH_CLIENT_ID
+        AZUPAY_UAT_BOTH_API_KEY: $AZUPAY_UAT_BOTH_API_KEY
+        AZUPAY_PRODUCTION_PAYID_CLIENT_ID: $AZUPAY_PRODUCTION_PAYID_CLIENT_ID
+        AZUPAY_PRODUCTION_PAYID_API_KEY: $AZUPAY_PRODUCTION_PAYID_API_KEY
+        AZUPAY_PRODUCTION_PAYTO_CLIENT_ID: $AZUPAY_PRODUCTION_PAYTO_CLIENT_ID
+        AZUPAY_PRODUCTION_PAYTO_API_KEY: $AZUPAY_PRODUCTION_PAYTO_API_KEY
+        AZUPAY_PRODUCTION_BOTH_CLIENT_ID: $AZUPAY_PRODUCTION_BOTH_CLIENT_ID
+        AZUPAY_PRODUCTION_BOTH_API_KEY: $AZUPAY_PRODUCTION_BOTH_API_KEY
+        AIO_COMMERCE_AUTH_IMS_CLIENT_ID: $AIO_COMMERCE_AUTH_IMS_CLIENT_ID
+        AIO_COMMERCE_AUTH_IMS_CLIENT_SECRETS: $AIO_COMMERCE_AUTH_IMS_CLIENT_SECRETS
+        AIO_COMMERCE_AUTH_IMS_TECHNICAL_ACCOUNT_ID: $AIO_COMMERCE_AUTH_IMS_TECHNICAL_ACCOUNT_ID
+        AIO_COMMERCE_AUTH_IMS_TECHNICAL_ACCOUNT_EMAIL: $AIO_COMMERCE_AUTH_IMS_TECHNICAL_ACCOUNT_EMAIL
+        AIO_COMMERCE_AUTH_IMS_ORG_ID: $AIO_COMMERCE_AUTH_IMS_ORG_ID
+        AIO_COMMERCE_AUTH_IMS_SCOPES: $AIO_COMMERCE_AUTH_IMS_SCOPES
+      actions:
+        checkout-branding:
+          function: actions/checkout-branding/index.js
+          web: yes
+          runtime: nodejs:24
+          annotations:
+            final: true
+            require-adobe-auth: false
+            web-custom-options: true
+        capture-cart:
+          function: actions/capture-cart/index.js
+          web: yes
+          runtime: nodejs:24
+          annotations:
+            final: true
+            require-adobe-auth: true
+        create-session:
+          function: actions/create-session/index.js
+          web: yes
+          runtime: nodejs:24
+          annotations:
+            final: true
+            require-adobe-auth: false
+            web-custom-options: true
+        payment-status:
+          function: actions/payment-status/index.js
+          web: yes
+          runtime: nodejs:24
+          annotations:
+            final: true
+            require-adobe-auth: false
+            web-custom-options: true
+        validate-payment:
+          function: actions/validate-payment/index.js
+          web: yes
+          runtime: nodejs:24
+          annotations:
+            final: true
+            require-adobe-auth: true
+        filter-payment:
+          function: actions/filter-payment/index.js
+          web: yes
+          runtime: nodejs:24
+          annotations:
+            final: true
+            require-adobe-auth: true
+        reconcile:
+          function: actions/reconcile/index.js
+          web: no
+          runtime: nodejs:24
+          limits:
+            timeout: 300000
+            concurrency: 1
+          annotations:
+            final: true
+    # This package definition is auto-generated. Do not remove or manually edit.
+    app-management:
+      license: Apache-2.0
+      actions:
+        app-config:
+          function: .generated/actions/app-management/app-config.js
+          web: yes
+          runtime: nodejs:24
+          inputs:
+            LOG_LEVEL: $LOG_LEVEL
+          annotations:
+            final: true
+            require-adobe-auth: true
+        association:
+          function: .generated/actions/app-management/association.js
+          web: yes
+          runtime: nodejs:24
+          inputs:
+            LOG_LEVEL: $LOG_LEVEL
+          annotations:
+            final: true
+            require-adobe-auth: true
+        installation:
+          function: .generated/actions/app-management/installation.js
+          web: yes
+          runtime: nodejs:24
+          inputs:
+            LOG_LEVEL: $LOG_LEVEL
+            AIO_COMMERCE_AUTH_IMS_CLIENT_ID: $AIO_COMMERCE_AUTH_IMS_CLIENT_ID
+            AIO_COMMERCE_AUTH_IMS_CLIENT_SECRETS: $AIO_COMMERCE_AUTH_IMS_CLIENT_SECRETS
+            AIO_COMMERCE_AUTH_IMS_TECHNICAL_ACCOUNT_ID: $AIO_COMMERCE_AUTH_IMS_TECHNICAL_ACCOUNT_ID
+            AIO_COMMERCE_AUTH_IMS_TECHNICAL_ACCOUNT_EMAIL: $AIO_COMMERCE_AUTH_IMS_TECHNICAL_ACCOUNT_EMAIL
+            AIO_COMMERCE_AUTH_IMS_ORG_ID: $AIO_COMMERCE_AUTH_IMS_ORG_ID
+            AIO_COMMERCE_AUTH_IMS_SCOPES: $AIO_COMMERCE_AUTH_IMS_SCOPES
+          annotations:
+            final: true
+            require-adobe-auth: true
+          limits:
+            timeout: 600000
+
+operations:
+  # These worker processes definitions are auto-generated. Do not remove or manually edit.
+  workerProcess:
+    - type: action
+      impl: app-management/app-config
+    - type: action
+      impl: app-management/association
+    - type: action
+      impl: app-management/installation

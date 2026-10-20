@@ -1,0 +1,15 @@
+{
+  "$schema": "https://biomejs.dev/schemas/2.5.15/schema.json",
+  "files": {
+    "includes": [
+      "**",
+      "!**/.generated",
+      "!dist",
+      "!build",
+      "!scripts/onboarding",
+      "!package-lock.json"
+    ]
+  },
+  "formatter": { "indentStyle": "space" },
+  "linter": { "enabled": true, "rules": { "preset": "none" } }
+}

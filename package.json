@@ -1,0 +1,40 @@
+{
+  "name": "azupay-commerce-app-builder",
+  "version": "0.1.5",
+  "private": true,
+  "license": "UNLICENSED",
+  "description": "Azupay hosted PayID and PayTo payments for Adobe Commerce as a Cloud Service",
+  "type": "module",
+  "engines": {
+    "node": ">=22 <=24"
+  },
+  "imports": {
+    "#app.commerce.config": "./src/commerce-extensibility-1/.generated/app.commerce.config.js"
+  },
+  "scripts": {
+    "postinstall": "aio-commerce-lib-app hooks postinstall",
+    "generate": "aio-commerce-lib-app generate all",
+    "build": "npm run generate && node scripts/build.js",
+    "check": "biome check .",
+    "check:docs": "node scripts/check-repository.js --docs-only",
+    "check:public": "node scripts/check-repository.js",
+    "release:check": "node scripts/check-repository.js --release",
+    "release:package": "npm run release:check && npm run verify && node scripts/package-release.js",
+    "test": "node --test test/*.test.js",
+    "test:coverage": "node --test --experimental-test-coverage test/*.test.js",
+    "test:eds-package": "node scripts/verify-eds-package.js",
+    "verify": "npm run check && npm run check:public && npm test && npm run build && npm run test:eds-package"
+  },
+  "dependencies": {
+    "@adobe/aio-lib-state": "5.4.0",
+    "@adobe/aio-commerce-lib-app": "2.0.0",
+    "@adobe/aio-commerce-lib-config": "1.8.0",
+    "@adobe/aio-commerce-sdk": "2.0.0"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "^2.3.0",
+    "acorn": "^8.15.0",
+    "esbuild": "^0.25.0",
+    "yaml": "^2.8.0"
+  }
+}

@@ -1,0 +1,5 @@
+extensions:
+  - extensionPointId: commerce/extensibility/1
+  - extensionPointId: commerce/configuration/1
+apis:
+  - code: AdobeIOManagementAPISDK
