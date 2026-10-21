@@ -161,10 +161,89 @@ Do not refund twice from Commerce and Azupay.
 - Runtime code logs only error codes and, for reconciliation, numeric order IDs.
   Restrict Adobe operator access to action parameters and activation metadata.
 
+## Demo and UAT with the Azupay test bank
+
+Use Azupay's [Testing the Pay by Bank App guide](https://developer.azupay.com.au/docs/test-accounts-1-click-checkout)
+as the authority for current test accounts and expected outcomes. The
+[Azupay Test Bank](https://staging-testbank.nonprod.azupay.au/) simulates the
+customer's bank payment for the PayID flow. PayTo uses the fictitious accounts
+below inside hosted checkout; the documented happy-path agreements are approved
+automatically, without a separate Test Bank transfer.
+
+### Prepare the demo
+
+1. Use an isolated UAT storefront/cart and UAT Azupay credentials. In Commerce,
+   select **Staging / UAT** and a provisioned PayID, PayTo or both profile. Keep
+   production approval off; never send real money or use real bank credentials.
+2. Complete the AUD cart, addresses, shipping and required terms. Select Azupay
+   and continue into full-page or modal checkout.
+3. Use a fresh cart for each independent scenario. Once a payment has completed,
+   finish or reconcile its order before starting another test; do not pay twice
+   or clear a paid session to repeat a demo.
+
+### PayID: simulate the bank transfer
+
+1. Choose **PayID** in Azupay hosted checkout, if the profile offers both methods.
+2. Copy the **payment's displayed recipient PayID and exact AUD amount**. This is
+   the PayID generated for this payment, not one of the PayTo customer test PayIDs
+   below.
+3. Open the [Test Bank](https://staging-testbank.nonprod.azupay.au/) in a separate
+   tab. Follow its payment form to simulate a transfer to that recipient PayID
+   for the exact amount, using any reference/instructions shown by the checkout
+   and requested by the form. Submit the simulated payment once.
+4. Return to the original Azupay checkout and wait for payment confirmation.
+   In modal mode, wait for server verification to close the dialog; use its
+   manual status check if needed. In redirect mode, follow the return to the
+   original Commerce checkout.
+5. Select **Complete your order** in Commerce. Confirm the order and, if enabled,
+   its single offline invoice after the next reconciliation run.
+
+### PayTo: use a simulated payer account
+
+1. Choose **PayTo** in Azupay hosted checkout.
+2. Enter a documented fictitious payer PayID: `0400123123` or `0400123456`.
+   If checkout offers BSB/account entry, use BSB `939300` and account `123456`.
+3. Follow the hosted agreement/authorization prompts. For these happy-path
+   accounts, Azupay automatically approves the agreement to `ACTIVE`. If
+   passkeys are enabled, follow the additional passkey flow presented.
+4. Wait for the **payment** to complete. Agreement approval alone is not proof
+   of settlement, and a PayTo happy-path test does not require sending a separate
+   PayID transfer from the Test Bank.
+5. Return to Commerce (or wait for the verified modal to close), select
+   **Complete your order**, and check the order and optional offline invoice.
+
+For a successful PayTo demo, avoid an $88.88 cart when using `0400123123`:
+Azupay reserves that combination for a payment-processing failure.
+
+### PayTo exception scenarios
+
+Use the following cases from Azupay's guide. Amounts refer to the final
+PaymentRequest total, including shipping, tax and discounts.
+
+| Payer PayID | Payment amount | Documented outcome |
+| --- | --- | --- |
+| `0444222333` | Any | PayID is not registered |
+| `0454444555` | Any | PayID does not support PayTo |
+| `0400123123` | $88.88 | Payment cannot be processed |
+| `0472345678` | Any | Agreement remains `CREATED`; authorization expires |
+| `0400111222` | Any | Payment initiation fails with insufficient funds |
+
+Verify the provider displays the expected failure and Commerce creates neither
+an order nor an invoice for that failed/unsettled attempt. Do not bypass the
+server's `COMPLETE`, amount or settlement-rail checks to make a demo succeed.
+If Azupay changes its simulator, follow the linked current guide or confirm the
+scenario with Azupay rather than guessing credentials.
+
+Record the scenario, presentation mode, final amount, provider outcome and
+Commerce order/invoice result in restricted UAT evidence. Do not publish
+credentials, signed receipts or customer/cart payloads. These simulations do not
+replace real supported-bank, mobile handoff and passkey acceptance testing.
+
 ## UAT acceptance checklist
 
-Use Azupay's current **Testing the Pay by Bank App** accounts/instructions for
-your client; do not guess test bank credentials or send real funds to UAT.
+Run the [Test Bank and PayTo demo scenarios](#demo-and-uat-with-the-azupay-test-bank)
+first, using Azupay's current linked instructions for your client. Do not guess
+test bank credentials or send real funds to UAT.
 
 | Test | Expected result |
 | --- | --- |

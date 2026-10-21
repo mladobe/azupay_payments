@@ -302,6 +302,12 @@ EDS flow returns to the current checkout pathname; no new CMS return page is
 needed. Other headless/standalone layouts must preserve shopper/cart context and
 follow their documented return/completion adapter requirements.
 
+For a repeatable demo, follow the
+[PayID Test Bank and PayTo test-account walkthrough](OPERATIONS.md#demo-and-uat-with-the-azupay-test-bank),
+based on Azupay's
+[Testing the Pay by Bank App guide](https://developer.azupay.com.au/docs/test-accounts-1-click-checkout).
+Use simulated payments only; never send real funds to UAT.
+
 **Checkpoint:** a UAT shopper can create a session, pay on Azupay, return, and
 place an order only after the server verifies `COMPLETE`.
 

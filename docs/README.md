@@ -249,7 +249,13 @@ requirements, described in the storefront guide.
 
 1. Use an eligible UAT cart and complete addresses, shipping and required terms.
 2. Select Azupay and continue through the chosen presentation.
-3. Pay using Azupay's current documented UAT process.
+3. Follow the [PayID Test Bank and PayTo test-account walkthrough](OPERATIONS.md#demo-and-uat-with-the-azupay-test-bank).
+   For PayID, simulate payment to the displayed recipient PayID and exact amount
+   in the [Azupay Test Bank](https://staging-testbank.nonprod.azupay.au/). For
+   PayTo, enter a documented fictitious payer account in hosted checkout; no
+   separate Test Bank transfer is needed. See Azupay's
+   [Testing the Pay by Bank App guide](https://developer.azupay.com.au/docs/test-accounts-1-click-checkout)
+   for current accounts and exception scenarios. Never use real funds in UAT.
 4. Return to checkout or wait for server verification to close the modal.
 5. Review the checkout and select **Complete your order**.
 6. Confirm the order, payment totals and required settlement checks.
