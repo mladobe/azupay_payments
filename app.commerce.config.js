@@ -1,13 +1,25 @@
 import { defineConfig } from "@adobe/aio-commerce-lib-app/config";
 import packageJson from "./package.json" with { type: "json" };
 import { configSchema } from "./src/shared/config-schema.js";
+import { APP_ID, DEFAULT_TITLE } from "./src/shared/identity.js";
 
 export default defineConfig({
   metadata: {
-    id: "azupay-pay-by-bank",
-    displayName: "Azupay Pay by Bank",
+    id: APP_ID,
+    displayName: DEFAULT_TITLE,
     description: "Hosted PayID and PayTo checkout for Adobe Commerce SaaS.",
     version: packageJson.version,
+  },
+  adminUi: {
+    menu: {
+      id: "Azupay::payments",
+      label: DEFAULT_TITLE,
+      pageTitle: DEFAULT_TITLE,
+      description: "Azupay setup, payment operations and UAT resources.",
+      parentMenu: "sales",
+      aclProtected: true,
+      sandboxPermissions: ["allow-popups"],
+    },
   },
   businessConfig: { schema: configSchema },
   installation: {

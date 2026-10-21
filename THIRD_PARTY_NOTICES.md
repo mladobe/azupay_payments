@@ -18,6 +18,11 @@ Dependency licenses are distributed with their installed packages. See
 `package-lock.json` for the pinned dependency graph. No Azupay API keys or private
 merchant documentation are included.
 
+The Admin UI uses Adobe's V2 Admin UI SDK, React and Spectrum dependencies,
+with their respective package licences and notices. Azupay's public PHP manual
+was consulted for a feature comparison; its PDF, screenshots and prose are not
+redistributed with this project.
+
 The self-contained EDS installer bundles the Acorn JavaScript parser, licensed
 under the MIT License. Its original license is included in the installer
 archive as `ACORN-LICENSE.txt`.

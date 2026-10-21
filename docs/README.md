@@ -193,6 +193,11 @@ all three subscriptions have the intended live settings.
 
 ## Configure payment settings
 
+The V2 **Sales > Azupay Real Time Payments** menu provides setup, operations
+and UAT resources. See [admin menu installation and permissions](ADMIN.md).
+Editable settings remain in **Apps > App Management > Azupay Real Time Payments
+> Configure**, not a duplicate editor in the new menu.
+
 Open the app's native configuration, select the intended scope, unlock inherited
 **From Default** values where needed, and save.
 
@@ -215,6 +220,10 @@ their hosts in `img-src`. Modal mode needs the actual Azupay checkout origins
 allowed in `frame-src`; it always offers a same-payment full-page escape.
 Reload checkout after saving branding. Presentation changes apply only to new
 payment sessions.
+
+The default checkout title is **Azupay Real Time Payments**. Existing saved
+titles are not overwritten; set an explicit scoped title if upgrading from the
+old label. See [name migration](ADMIN.md#app-and-checkout-names).
 
 See [branding](STOREFRONT.md#configure-the-checkout-title-byline-and-logos) and
 [modal configuration](STOREFRONT.md#embeddedmodal-checkout).

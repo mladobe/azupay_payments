@@ -22,6 +22,7 @@ assert.deepEqual(
   [
     "package/OPERATIONS.md",
     "package/ARCHITECTURE.md",
+    "package/ADMIN.md",
     "package/STOREFRONT.md",
     "package/THIRD_PARTY_NOTICES.md",
     "package/ACORN-LICENSE.txt",

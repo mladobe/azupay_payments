@@ -1,6 +1,7 @@
+import { DEFAULT_TITLE } from "./identity.js";
 import { requireValue } from "./payment.js";
 
-export const DEFAULT_TITLE = "Pay by bank";
+export { DEFAULT_TITLE } from "./identity.js";
 export const DEFAULT_BYLINE = "Pay securely from your bank account.";
 const OFFICIAL_LOGOS = {
   payid: {

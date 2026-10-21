@@ -7,7 +7,7 @@ import { setupAzupayBranding } from "../storefront/eds.js";
 describe("public store-scoped checkout branding", () => {
   it("uses safe text defaults and gates official logos on merchant permission", () => {
     assert.deepEqual(brandingSettings({ methods: "both" }), {
-      title: "Pay by bank",
+      title: "Azupay Real Time Payments",
       byline: "Pay securely from your bank account.",
       logos: [],
     });

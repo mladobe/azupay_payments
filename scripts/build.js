@@ -54,6 +54,28 @@ await build({
   target: "node22",
   format: "esm",
 });
+await build({
+  entryPoints: [
+    new URL("src/commerce-backend-ui-2/web-src/src/app.jsx", root).pathname,
+  ],
+  outfile: new URL("dist/admin/app.js", root).pathname,
+  bundle: true,
+  platform: "browser",
+  target: "es2022",
+  format: "esm",
+  jsx: "automatic",
+  define: { "process.env.NODE_ENV": '"production"' },
+});
+const adminHtml = await readFile(
+  new URL("src/commerce-backend-ui-2/web-src/index.html", root),
+  "utf8",
+);
+await writeFile(
+  new URL("dist/admin/index.html", root),
+  adminHtml
+    .replace("</head>", '<link rel="stylesheet" href="./app.css" /></head>')
+    .replace('src="./src/app.jsx"', 'src="./app.js"'),
+);
 await mkdir(new URL("dist/eds/payload/", root), { recursive: true });
 await cp(
   new URL("dist/storefront/client.js", root),
@@ -70,6 +92,7 @@ const documents = {
   "ARCHITECTURE.md": "docs/ARCHITECTURE.md",
   "STOREFRONT.md": "docs/STOREFRONT.md",
   "PUBLISHING.md": "docs/PUBLISHING.md",
+  "ADMIN.md": "docs/ADMIN.md",
   "CONTRIBUTING.md": "CONTRIBUTING.md",
   "SECURITY.md": "SECURITY.md",
   "CHANGELOG.md": "CHANGELOG.md",
@@ -145,5 +168,5 @@ for (const name of [
 ])
   await cp(new URL(name, root), new URL(`dist/${name}`, root));
 console.log(
-  `Built ${Object.keys(actions).length} Runtime actions, browser modules and azupay-commerce-eds-${packageJson.version}.tgz. Adobe deploy still requires aio app build/deploy.`,
+  `Built ${Object.keys(actions).length} Runtime actions, V2 admin UI, browser modules and azupay-commerce-eds-${packageJson.version}.tgz. Adobe deploy still requires aio app build/deploy.`,
 );

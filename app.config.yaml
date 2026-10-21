@@ -3,3 +3,5 @@ extensions:
     $include: src/commerce-extensibility-1/ext.config.yaml
   commerce/configuration/1:
     $include: src/commerce-configuration-1/ext.config.yaml
+  commerce/backend-ui/2:
+    $include: src/commerce-backend-ui-2/ext.config.yaml

@@ -1,4 +1,4 @@
-# Azupay for Adobe Commerce as a Cloud Service
+# Azupay Real Time Payments for Adobe Commerce as a Cloud Service
 
 An Adobe App Builder payment extension for one-off Australian AUD payments using
 Azupay's hosted PayID and PayTo checkout.
@@ -26,6 +26,7 @@ configuration, storefront installation, testing and troubleshooting.
 | UAT and separately gated production configuration | Production credentials or commercial approval supplied by this repository |
 | Full-page redirect or optional embedded modal | Every bank, mobile browser or passkey journey without merchant UAT |
 | Configurable title, byline and permitted hosted logos | Native image uploads |
+| ACL-protected V2 admin menu with setup and operations resources | Embedded transaction reporting or a second configuration editor |
 | Verified payment before synchronous order placement | B2B purchase-order approval and AsyncOrder |
 | Scheduled full offline invoicing of verified paid orders | Automated refunds, partial invoicing and disputes |
 | Portable EDS installer for supported checkout source layouts | Automatic publishing of a merchant's storefront |
@@ -42,6 +43,7 @@ and approve the intended experiences.
 | [Detailed setup](docs/SETUP.md) | App Builder developers and Commerce administrators |
 | [Storefront integration](docs/STOREFRONT.md) | EDS/headless developers; branding and modal configuration |
 | [Operations and UAT](docs/OPERATIONS.md) | Payment operators; invoices, recovery, refunds and launch gates |
+| [Admin menu and PHP comparison](docs/ADMIN.md) | Administrators; V2 menu, permissions, naming and feature gaps |
 | [Architecture](docs/ARCHITECTURE.md) | Developers; trust boundaries and API contracts |
 | [Repository and release process](docs/PUBLISHING.md) | Maintainers preparing a GitHub repository or release |
 | [Contributing](CONTRIBUTING.md) | Contributors and reviewers |
@@ -73,7 +75,7 @@ chmod 600 .env
 Follow the installation guide to fill the private values. Never commit `.env`,
 `.aio`, workspace exports, onboarding notes, customer receipts or activation logs.
 
-`npm run build` emits the seven custom Runtime actions, browser modules,
+`npm run build` emits the seven custom Runtime actions, the V2 admin UI, browser modules,
 documentation and a versioned `dist/azupay-commerce-eds-<version>.tgz`. It is not an
 authenticated Adobe deployment. The generated EDS installer is website-agnostic;
 the merchant publishes its outputs through its own Code Sync process.

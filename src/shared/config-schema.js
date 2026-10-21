@@ -1,3 +1,5 @@
+import { DEFAULT_TITLE } from "./identity.js";
+
 export const configSchema = [
   {
     name: "enabled",
@@ -75,7 +77,7 @@ export const configSchema = [
     name: "checkoutTitle",
     label: "Checkout payment title",
     type: "text",
-    default: "Pay by bank",
+    default: DEFAULT_TITLE,
     description:
       "Name shown for this payment method in the checkout selector. Enter plain text, up to 100 characters. Refresh checkout after saving.",
   },

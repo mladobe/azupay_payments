@@ -4,8 +4,16 @@ Changes are grouped by implementation version. These entries describe local
 development history, not previously published GitHub releases or certification.
 The first public release is pending ownership/licence approval and acceptance.
 
-## Unreleased
+## 0.1.6
 
+- ACL-protected V2 Sales menu with Azupay setup, operations and UAT resources;
+  editable settings remain in native scoped App Management configuration.
+- App, menu and payment defaults renamed to Azupay Real Time Payments, retaining
+  existing app/payment identities and merchant-customized checkout titles.
+- Documented PHP-extension feature comparison, including online refund,
+  sort-order and debug-toggle gaps without enabling unsupported behavior.
+- Reviewed installer upgrades through 0.1.5 to 0.1.6; the 0.1.5 storefront browser
+  payload is unchanged, so the new admin menu does not require a storefront update.
 - Standardized merchant installation guide, contributor and security policies.
 - Public-repository checks, credential-free CI and draft release preparation.
 - App Builder metadata uses the same version as the package and EDS installer.

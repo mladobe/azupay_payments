@@ -1,6 +1,7 @@
 import { getCommerceClient } from "@adobe/aio-commerce-lib-app";
 import { defineCustomInstallationStep } from "@adobe/aio-commerce-lib-app/management";
 import { resolveImsAuthParams } from "@adobe/aio-commerce-sdk/auth";
+import { DEFAULT_TITLE } from "../src/shared/identity.js";
 import { requireValue } from "../src/shared/payment.js";
 
 async function setActive(context, active) {
@@ -18,7 +19,7 @@ async function setActive(context, active) {
       json: {
         payment_method: {
           code: "azupay",
-          title: "Azupay - Pay by bank",
+          title: DEFAULT_TITLE,
           active,
           backend_integration_url: `${actionBaseUrl}/create-session`,
           order_status: "pending",

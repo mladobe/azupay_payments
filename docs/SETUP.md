@@ -182,7 +182,7 @@ Action-selective deployment alone does not install a missing timer. See
 In Commerce Admin:
 
 1. Go to **Apps > App Management** in the same organization.
-2. Find **Azupay Pay by Bank**, associate it with your UAT Commerce instance.
+2. Find **Azupay Real Time Payments**, associate it with your UAT Commerce instance.
 3. **Install** the app and complete its custom registration/webhook steps.
 4. Verify it is **Installed**, not Partially Installed.
 5. Open configuration and **Sync commerce scopes** if needed.
