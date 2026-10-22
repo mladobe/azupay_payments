@@ -221,7 +221,7 @@ async function earlierRelease(options, version) {
   }
   const path = join(options.target, containersPath);
   const installed = await readFile(path, "utf8");
-  const source = ["0.1.3", "0.1.4", "0.1.5"].includes(version)
+  const source = ["0.1.3", "0.1.4", "0.1.5", "0.1.6"].includes(version)
     ? installed
     : installed.replace(
         "azupayButtonLabel(undefined, span)",
@@ -235,7 +235,15 @@ async function earlierRelease(options, version) {
   return manifestPath;
 }
 
-for (const version of ["0.1.0", "0.1.1", "0.1.2", "0.1.3", "0.1.4", "0.1.5"]) {
+for (const version of [
+  "0.1.0",
+  "0.1.1",
+  "0.1.2",
+  "0.1.3",
+  "0.1.4",
+  "0.1.5",
+  "0.1.6",
+]) {
   it(`explicitly upgrades ${version} without rewriting merchant checkout`, async (t) => {
     const options = await fixture(t);
     await installEds(options);
@@ -278,37 +286,39 @@ for (const version of ["0.1.0", "0.1.1", "0.1.2", "0.1.3", "0.1.4", "0.1.5"]) {
   });
 }
 
-it("upgrades unchanged 0.1.5 assets without adding a second button registration", async (t) => {
-  const options = await fixture(t);
-  await installEds(options);
-  const manifestPath = await earlierRelease(options, "0.1.5");
-  const before = await Promise.all(
-    [
-      checkoutPath,
-      containersPath,
-      initializerPath,
-      "scripts/azupay/client.js",
-    ].map((path) => readFile(join(options.target, path), "utf8")),
-  );
-  assert.equal(
-    (await installEds({ ...options, upgrade: true })).status,
-    "upgraded",
-  );
-  const after = await Promise.all(
-    [
-      checkoutPath,
-      containersPath,
-      initializerPath,
-      "scripts/azupay/client.js",
-    ].map((path) => readFile(join(options.target, path), "utf8")),
-  );
-  assert.deepEqual(after, before);
-  assert.equal(
-    JSON.parse(await readFile(manifestPath, "utf8")).version,
-    "0.1.6",
-  );
-  assert.equal((await installEds(options)).status, "unchanged");
-});
+for (const version of ["0.1.5", "0.1.6"]) {
+  it(`upgrades unchanged ${version} assets without adding a second button registration`, async (t) => {
+    const options = await fixture(t);
+    await installEds(options);
+    const manifestPath = await earlierRelease(options, version);
+    const before = await Promise.all(
+      [
+        checkoutPath,
+        containersPath,
+        initializerPath,
+        "scripts/azupay/client.js",
+      ].map((path) => readFile(join(options.target, path), "utf8")),
+    );
+    assert.equal(
+      (await installEds({ ...options, upgrade: true })).status,
+      "upgraded",
+    );
+    const after = await Promise.all(
+      [
+        checkoutPath,
+        containersPath,
+        initializerPath,
+        "scripts/azupay/client.js",
+      ].map((path) => readFile(join(options.target, path), "utf8")),
+    );
+    assert.deepEqual(after, before);
+    assert.equal(
+      JSON.parse(await readFile(manifestPath, "utf8")).version,
+      "0.1.7",
+    );
+    assert.equal((await installEds(options)).status, "unchanged");
+  });
+}
 
 it("does not upgrade a modified installation or unsupported release", async (t) => {
   const options = await fixture(t);

@@ -9,27 +9,65 @@ The application declares **Sales > Azupay Real Time Payments** through
 IMS context. It does not use V1 `ExtensionRegistration` or a separate menu
 registration Runtime action.
 
-The menu opens an operations/setup page with:
+The menu opens **Configuration** by default, with **Documentation** as a second
+tab. This V2 page stays in the Commerce Admin iframe so its left navigation
+remains available. The Documentation tab contains:
 
-- Instructions for the existing native, store-scoped App Management settings.
+- Instructions for editing the shared, store-scoped App Management settings.
 - Azupay UAT/production dashboard links, clearly separated.
 - The PayID Test Bank, current PayTo test-account guide and UAT walkthrough.
 - Payment completion, invoicing, paid-cart recovery and refund guidance.
 
-It is **not a live payment dashboard or health check**, and does not fetch
-credentials, configuration, payment records or scheduler state. IMS tokens are
-not displayed, persisted or attached to external links. Links open in a new tab
-without a referrer or opener; the menu requests only the extra sandbox permission
-needed for those popups.
+The Configuration tab reads and edits the same native configuration storage;
+there is no second settings database. It is **not a live payment dashboard or
+health check**, and does not fetch API keys, payment records or scheduler state.
+IMS tokens are not displayed, persisted or attached to external links. Links open in a new tab
+without a referrer or opener. The menu requests only `allow-popups` for those
+links. Save validates the form and calls the authenticated API directly, without
+depending on native form submission inside the iframe. No unsupported
+`allow-forms` override or top-navigation permission is requested.
 
 `aclProtected: true` gives the menu a dedicated per-app Commerce ACL resource.
 After installation/upgrade, a Commerce administrator must grant the Azupay menu
 permission to the intended roles in **System > Permissions > User Roles**.
-Opening the menu does not grant App Management configuration access, order
-access, Azupay dashboard access or refund privileges. Assign those independently.
+The menu permission now grants access to **read and edit Azupay settings through
+this page**. Assign it only to roles that should configure payments. The backend
+checks that permission with the signed-in admin's forwarded IMS token on every
+read/save; it never uses the deployment technical account to authorize the user.
+Native App Management access, order access, Azupay dashboard access and refund
+privileges remain separate permissions.
 
 If the page is opened outside the authenticated host, it shows an authentication
 warning rather than implying an authenticated account connection.
+
+## Configuration inside Commerce Admin
+
+1. Open **Sales > Azupay Real Time Payments**. The Configuration tab is selected.
+2. Select the intended global, website, store or store-view scope from the
+   existing scope tree. Noneditable scopes are displayed read-only.
+3. Clear **Use inherited / default value** for each explicit override you need.
+   All fields retain the schema's labels, options and help descriptions.
+4. Select **Save configuration**. Only changed fields are patched; checking
+   inheritance sends `null` to remove the override rather than copying a parent
+   value into the selected scope.
+5. A confirmed reload shows the saved values. Refresh storefront checkout to
+   load presentation changes.
+
+Switching to Documentation and back retains the current scope and unsaved
+draft. Save or discard before changing scope or reloading. After a failed or
+ambiguous save, editing is blocked until configuration is reloaded so that a
+possibly successful write is not mistaken for a failed one.
+
+The authenticated `azupay/admin-config` adapter reuses Adobe's
+`configRuntimeAction` and `scopeTreeRuntimeAction` handlers. It accepts only
+configuration GET/PATCH and scope-tree GET, preserves native storage/encryption
+and does not expose custom-scope creation, sync or deletion. Use native App
+Management to sync/manage the scope tree when needed.
+
+The older **Apps > App Management > Configure** route opens Experience Cloud,
+not the Commerce Admin iframe. Its missing Commerce sidebar is a host difference,
+not a CSS defect in Azupay. This extension does not inject a fake Commerce sidebar
+or embed that separate page in a nested iframe.
 
 ## Install or upgrade the admin extension
 
@@ -63,8 +101,8 @@ administrator. Do not install PHP modules or use V1 as a silent fallback on ACCS
    or unreconciled payments just to refresh its menu.
 5. Sign out/in or reload the Admin if its menu cache needs refreshing. Open
    **Sales > Azupay Real Time Payments** and verify it renders within Commerce.
-6. Test both an allowed and a denied admin role, the native configuration
-   instructions and external links. If the menu is missing, check V2
+6. Test both an allowed and a denied admin role, Configuration/Documentation tabs,
+   scoped inheritance, saves and external links. If the menu is missing, check V2
    availability, deployed web assets, approval/association state and ACLs.
 
 For an already-published Adobe Production workspace, `--force-deploy` can update

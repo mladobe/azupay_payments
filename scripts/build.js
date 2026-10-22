@@ -64,7 +64,12 @@ await build({
   target: "es2022",
   format: "esm",
   jsx: "automatic",
-  define: { "process.env.NODE_ENV": '"production"' },
+  define: {
+    "process.env.NODE_ENV": '"production"',
+    "process.env.AIO_runtime_namespace": JSON.stringify(
+      process.env.AIO_runtime_namespace ?? "",
+    ),
+  },
 });
 const adminHtml = await readFile(
   new URL("src/commerce-backend-ui-2/web-src/index.html", root),

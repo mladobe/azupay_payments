@@ -175,7 +175,7 @@ logs, receipt/cart dumps or the whole local `dist` directory.
 ## 6. Create a draft GitHub release
 
 After the approved revision is merged, create an immutable version tag matching
-`package.json`, for example `v0.1.6`, and push that tag through the authorized
+`package.json`, for example `v0.1.7`, and push that tag through the authorized
 maintainer workflow. Do not overwrite an existing published tag.
 
 The tag-triggered **Prepare release** workflow:

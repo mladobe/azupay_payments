@@ -15,7 +15,8 @@ export default defineConfig({
       id: "Azupay::payments",
       label: DEFAULT_TITLE,
       pageTitle: DEFAULT_TITLE,
-      description: "Azupay setup, payment operations and UAT resources.",
+      description:
+        "Configure Azupay payments and view setup, operations and UAT documentation.",
       parentMenu: "sales",
       aclProtected: true,
       sandboxPermissions: ["allow-popups"],

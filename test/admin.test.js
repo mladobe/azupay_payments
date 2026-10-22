@@ -19,6 +19,18 @@ async function moduleFromBuild(options) {
     jsx: "automatic",
     define: { "process.env.NODE_ENV": '"production"' },
     ...options,
+    plugins: [
+      {
+        name: "shared-react",
+        setup(builder) {
+          builder.onResolve({ filter: /^react(?:\/.*)?$/ }, ({ path }) => ({
+            path: import.meta.resolve(path),
+            external: true,
+          }));
+        },
+      },
+      ...(options.plugins ?? []),
+    ],
   });
   return import(
     `data:text/javascript;base64,${Buffer.from(outputFiles[0].text).toString("base64")}`
@@ -34,7 +46,8 @@ describe("V2 admin menu and payment identity", () => {
       id: "Azupay::payments",
       label: DEFAULT_TITLE,
       pageTitle: DEFAULT_TITLE,
-      description: "Azupay setup, payment operations and UAT resources.",
+      description:
+        "Configure Azupay payments and view setup, operations and UAT documentation.",
       parentMenu: "sales",
       aclProtected: true,
       sandboxPermissions: ["allow-popups"],
@@ -140,13 +153,25 @@ describe("admin operations page", () => {
     return renderToStaticMarkup(createElement(AdminPage, { connected }));
   }
 
-  it("renders native configuration guidance and safe UAT and operations links without a duplicate editor", async () => {
+  it("opens Configuration by default with documentation and safe UAT links in a separate tab", async () => {
     const html = await render(true);
     assert.match(html, /<h1>Azupay Real Time Payments<\/h1>/);
     assert.match(html, /Apps &gt; App Management/);
     assert.match(html, /not a live payment dashboard/);
     assert.match(html, /Online Commerce refunds are not supported/);
-    assert.doesNotMatch(html, /<form|<input|imsToken|imsOrgId|role="alert"/);
+    assert.doesNotMatch(html, /imsToken|imsOrgId|role="alert"/);
+    assert.match(
+      html,
+      /role="tab" aria-selected="true" aria-controls="configuration-panel"/,
+    );
+    assert.match(
+      html,
+      /id="documentation-panel" role="tabpanel" aria-labelledby="documentation-tab" hidden=""/,
+    );
+    assert.match(
+      html,
+      /Configuration requires an authenticated Commerce Admin connection/,
+    );
     const links = [...html.matchAll(/<a ([^>]+)>/g)];
     assert.ok(links.length >= 8);
     for (const [, attributes] of links) {

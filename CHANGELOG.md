@@ -4,6 +4,16 @@ Changes are grouped by implementation version. These entries describe local
 development history, not previously published GitHub releases or certification.
 The first public release is pending ownership/licence approval and acceptance.
 
+## 0.1.7
+
+- Sales menu opens an embedded Configuration tab, retaining Commerce Admin
+  navigation; the existing setup/operations content moves into Documentation.
+- Reuses Adobe's native configuration and scope handlers/storage behind a
+  signed-in-user menu ACL check, with scope inheritance, minimal patch saves,
+  explicit errors and retained drafts when switching tabs.
+- Reviewed installer upgrades through 0.1.6 to 0.1.7. The storefront browser
+  payload is unchanged; no EDS reinstall is required for the admin configuration tabs.
+
 ## 0.1.6
 
 - ACL-protected V2 Sales menu with Azupay setup, operations and UAT resources;

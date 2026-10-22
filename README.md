@@ -26,7 +26,7 @@ configuration, storefront installation, testing and troubleshooting.
 | UAT and separately gated production configuration | Production credentials or commercial approval supplied by this repository |
 | Full-page redirect or optional embedded modal | Every bank, mobile browser or passkey journey without merchant UAT |
 | Configurable title, byline and permitted hosted logos | Native image uploads |
-| ACL-protected V2 admin menu with setup and operations resources | Embedded transaction reporting or a second configuration editor |
+| ACL-protected V2 admin configuration and documentation tabs | Embedded transaction reporting |
 | Verified payment before synchronous order placement | B2B purchase-order approval and AsyncOrder |
 | Scheduled full offline invoicing of verified paid orders | Automated refunds, partial invoicing and disputes |
 | Portable EDS installer for supported checkout source layouts | Automatic publishing of a merchant's storefront |
@@ -75,7 +75,7 @@ chmod 600 .env
 Follow the installation guide to fill the private values. Never commit `.env`,
 `.aio`, workspace exports, onboarding notes, customer receipts or activation logs.
 
-`npm run build` emits the seven custom Runtime actions, the V2 admin UI, browser modules,
+`npm run build` emits the eight custom Runtime actions, the V2 admin UI, browser modules,
 documentation and a versioned `dist/azupay-commerce-eds-<version>.tgz`. It is not an
 authenticated Adobe deployment. The generated EDS installer is website-agnostic;
 the merchant publishes its outputs through its own Code Sync process.

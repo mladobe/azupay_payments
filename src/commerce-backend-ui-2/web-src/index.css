@@ -59,6 +59,70 @@ body {
   background: #fff4d6;
 }
 
+.azupay-admin [hidden] {
+  display: none;
+}
+
+.admin-tabs,
+.configuration-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-items: center;
+  margin: 20px 0;
+}
+
+.azupay-admin button,
+.azupay-admin input,
+.azupay-admin select {
+  font: inherit;
+  max-width: 100%;
+}
+
+.azupay-admin button {
+  padding: 8px 14px;
+  cursor: pointer;
+}
+
+.azupay-admin button:disabled {
+  cursor: default;
+}
+
+.admin-tabs [aria-selected="true"] {
+  color: #fff;
+  background: #005fcc;
+  border-color: #005fcc;
+}
+
+.configuration-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 320px), 1fr));
+  gap: 24px;
+}
+
+.configuration-field > label:first-child {
+  display: block;
+  font-weight: 600;
+}
+
+.configuration-field > input:not([type="checkbox"]),
+.configuration-field > select {
+  box-sizing: border-box;
+  width: 100%;
+  padding: 8px;
+}
+
+.field-help,
+.configuration-field small {
+  font-size: 0.875rem;
+}
+
+.inheritance-control {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
 @media (max-width: 480px) {
   .azupay-admin,
   .azupay-admin section {

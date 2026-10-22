@@ -40,6 +40,15 @@ runtimeManifest:
         AIO_COMMERCE_AUTH_IMS_ORG_ID: $AIO_COMMERCE_AUTH_IMS_ORG_ID
         AIO_COMMERCE_AUTH_IMS_SCOPES: $AIO_COMMERCE_AUTH_IMS_SCOPES
       actions:
+        admin-config:
+          function: actions/admin-config/index.js
+          web: yes
+          runtime: nodejs:24
+          inputs:
+            AIO_COMMERCE_CONFIG_ENCRYPTION_KEY: $AIO_COMMERCE_CONFIG_ENCRYPTION_KEY
+          annotations:
+            final: true
+            require-adobe-auth: true
         checkout-branding:
           function: actions/checkout-branding/index.js
           web: yes

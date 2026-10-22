@@ -193,13 +193,17 @@ all three subscriptions have the intended live settings.
 
 ## Configure payment settings
 
-The V2 **Sales > Azupay Real Time Payments** menu provides setup, operations
-and UAT resources. See [admin menu installation and permissions](ADMIN.md).
-Editable settings remain in **Apps > App Management > Azupay Real Time Payments
-> Configure**, not a duplicate editor in the new menu.
+The V2 **Sales > Azupay Real Time Payments** menu opens the **Configuration**
+tab inside Commerce Admin, retaining its left navigation. The **Documentation**
+tab contains setup, operations and UAT resources. It edits the same scoped settings
+as **Apps > App Management > Azupay Real Time Payments > Configure**, whose
+separate Experience Cloud page does not include the Commerce sidebar.
+See [admin menu installation and permissions](ADMIN.md).
 
 Open the app's native configuration, select the intended scope, unlock inherited
 **From Default** values where needed, and save.
+In the embedded editor, clear **Use inherited / default value** to make an
+explicit override. Check it again to reset that field to inheritance on save.
 
 | Setting | Initial UAT value or action |
 | --- | --- |
