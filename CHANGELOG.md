@@ -6,6 +6,8 @@ The first public release is pending ownership/licence approval and acceptance.
 
 ## 0.1.7
 
+- Explicit Adobe `auto` lifecycle upgrades after versioned deployments, so the
+  SDK executes the upgrade rather than leaving an unapplied manual plan.
 - Sales menu opens an embedded Configuration tab, retaining Commerce Admin
   navigation; the existing setup/operations content moves into Documentation.
 - Reuses Adobe's native configuration and scope handlers/storage behind a

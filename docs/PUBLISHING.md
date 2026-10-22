@@ -151,7 +151,10 @@ Dependabot proposes dependency/action updates; it does not auto-merge them.
 4. Keep configuration defaults conservative: redirect, official-logo permission
    off, production blocked in deployment examples.
 5. Ensure source, backend/schema changes and EDS changes are compatible. Advancing
-   App Builder metadata can invoke Commerce's upgrade lifecycle; test it in UAT.
+   App Builder metadata invokes Commerce's upgrade lifecycle through the deploy
+   hook for existing installations (`metadata.upgradeMode: "auto"`). Review the
+   intended changes and test in UAT before deploying; do not rely on a manual
+   Upgrade button in App Management. Verify the lifecycle execution result.
 6. Commit reviewed changes. Local release packaging requires a clean working
    tree/index, approved licence and a committed source revision.
 

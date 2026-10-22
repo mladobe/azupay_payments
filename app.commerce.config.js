@@ -9,6 +9,7 @@ export default defineConfig({
     displayName: DEFAULT_TITLE,
     description: "Hosted PayID and PayTo checkout for Adobe Commerce SaaS.",
     version: packageJson.version,
+    upgradeMode: "auto",
   },
   adminUi: {
     menu: {

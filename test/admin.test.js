@@ -42,6 +42,7 @@ describe("V2 admin menu and payment identity", () => {
     assert.equal(config.metadata.id, APP_ID);
     assert.equal(APP_ID, "azupay-pay-by-bank");
     assert.equal(config.metadata.displayName, DEFAULT_TITLE);
+    assert.equal(config.metadata.upgradeMode, "auto");
     assert.deepEqual(config.adminUi.menu, {
       id: "Azupay::payments",
       label: DEFAULT_TITLE,

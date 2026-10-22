@@ -93,12 +93,15 @@ administrator. Do not install PHP modules or use V1 as a silent fallback on ACCS
    Before upgrading an existing installation, follow
    the [versioned release process](PUBLISHING.md#5-prepare-a-versioned-release).
    Reusing an installed metadata version is not a reliable way to trigger an
-   App Management upgrade.
+   lifecycle upgrade. This app explicitly uses `metadata.upgradeMode: "auto"`;
+   the post-deploy hook plans and starts upgrades for an existing installation.
 
-4. Complete the Adobe publication/approval flow if prompted. Refresh the app in
-   Commerce **Apps > App Management**, complete the supported upgrade/install
-   flow and grant the new menu ACL. Do not uninstall a payment app with unsettled
-   or unreconciled payments just to refresh its menu.
+4. Complete the Adobe publication/approval flow if prompted. For a first
+   installation, use **Install** in Commerce **Apps > App Management**. For an
+   existing SDK installation, let the post-deploy automatic lifecycle upgrade
+   finish and verify its result; do not assume there is an **Upgrade** button.
+   Grant the new menu ACL to the intended roles. Do not uninstall a payment app
+   with unsettled or unreconciled payments just to refresh its menu.
 5. Sign out/in or reload the Admin if its menu cache needs refreshing. Open
    **Sales > Azupay Real Time Payments** and verify it renders within Commerce.
 6. Test both an allowed and a denied admin role, Configuration/Documentation tabs,
@@ -111,8 +114,24 @@ register a newly added V2 extension point. Coordinate the supported Adobe
 Exchange retraction/republication and approval process with the application owner
 before expecting the menu to appear. Publication changes can affect availability;
 drain and reconcile payments first. Do not delete the Commerce installation as a
-substitute. The app's manual upgrade plan must also be applied in App Management;
-deploying a new metadata version alone does not execute that plan.
+substitute.
+
+### No Upgrade button / manual plan does not execute
+
+An **Associated** card with **Install** does not prove the SDK has no installation
+baseline. App Management card state and SDK lifecycle state must be checked
+separately. SDK 2.0.0 defaults an omitted `metadata.upgradeMode` to `"manual"`:
+the deploy hook creates a plan but does not execute it. Its CLI does not expose an
+`upgrade apply` command, and this Admin view need not provide an **Upgrade**
+control. Repeatedly clicking Install does not override the manual policy.
+
+This app explicitly sets `"auto"` so supported versioned deployments plan and
+execute the existing installation's upgrade through Adobe's post-deploy hook.
+This policy also applies to future versioned deployments; review plans and UAT
+evidence before deploying. Verify lifecycle completion rather than treating a
+successful CDN upload as a successful upgrade. If execution fails or times out,
+inspect its state before retrying the normal hook. Do not edit SDK state,
+invoke internal execution routes, or unassociate to force an upgrade.
 
 See Adobe's [Admin UI SDK overview](https://developer.adobe.com/commerce/extensibility/admin-ui-sdk/)
 and [V2 extension contracts](https://developer.adobe.com/commerce/extensibility/admin-ui-sdk/extension-points/v2/).
