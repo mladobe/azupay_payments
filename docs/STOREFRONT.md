@@ -33,14 +33,14 @@ node dist/eds/bin/install.js --target /absolute/path/to/storefront --dry-run
 node dist/eds/bin/install.js --target /absolute/path/to/storefront
 ```
 
-For another merchant, distribute `dist/azupay-commerce-eds-0.1.7.tgz`.
+For another merchant, distribute `dist/azupay-commerce-eds-0.1.8.tgz`.
 This archive contains a self-contained Node installer, the browser bundle and
 this guide. It contains no Adobe/Azupay credentials and needs no additional
 runtime dependencies.
 
 ```sh
 mkdir azupay-eds-installer
-tar -xzf /path/to/azupay-commerce-eds-0.1.7.tgz -C azupay-eds-installer
+tar -xzf /path/to/azupay-commerce-eds-0.1.8.tgz -C azupay-eds-installer
 node azupay-eds-installer/package/bin/install.js \
   --target /absolute/path/to/storefront --dry-run
 node azupay-eds-installer/package/bin/install.js \
@@ -62,15 +62,15 @@ The installer:
 - Creates `.azupay-eds-installation.json` with release/content hashes. Repeating
   the same installer is a no-op. Edited installed files, unmanaged Azupay code,
   changed releases, symlinked targets and unsupported layouts fail explicitly.
-  The explicit `--upgrade` option supports reviewed releases 0.1.0 through 0.1.6
-  to 0.1.7 after verifying every installed file's hash.
+  The explicit `--upgrade` option supports reviewed releases 0.1.0 through 0.1.7
+  to 0.1.8 after verifying every installed file's hash.
 
 Preflight checks all planned edits before writing. Do not run concurrent
 installers or edit checkout files during installation. Keep the installation
 manifest with the source changes. For an upgrade, review both the merchant's
 checkout changes and the new release before replacing an installation.
 
-### Upgrade an unchanged 0.1.0 through 0.1.6 installation
+### Upgrade an unchanged 0.1.0 through 0.1.7 installation
 
 ```sh
 node dist/eds/bin/install.js --target /absolute/path/to/storefront --upgrade --dry-run
@@ -79,9 +79,9 @@ node dist/eds/bin/install.js --target /absolute/path/to/storefront --upgrade
 
 This updates the generated browser bundle, registers the live Azupay order-button
 label in `blocks/commerce-checkout/containers.js`, and updates the installation
-manifest (0.1.3 through 0.1.6 already have the button registration). For 0.1.0/0.1.1 it also
+manifest (0.1.3 through 0.1.7 already have the button registration). For 0.1.0/0.1.1 it also
 adds the documented GraphQL branding hook to `scripts/initializers/checkout.js`;
-an existing 0.1.2 through 0.1.6 initializer is preserved. The native
+an existing 0.1.2 through 0.1.7 initializer is preserved. The native
 order handler is unchanged. Publish all changed outputs through Code Sync.
 If any installed file has been edited since installation, stop and review it;
 the installer will not overwrite it or bypass hash verification.
@@ -90,6 +90,14 @@ The 0.1.6 admin-menu/name update and 0.1.7 configuration tabs do not change the
 0.1.5 browser payload. Existing 0.1.5/0.1.6 storefronts do not need reinstalling
 for these admin changes or server-provided default title. An optional reviewed
 upgrade updates the installer manifest without changing an otherwise unchanged checkout.
+
+Version 0.1.8 changes the browser payload to fix oversized checkout logos.
+Upgrade and publish the installer outputs through your storefront's normal Code
+Sync workflow. Deploying App Builder alone cannot apply this browser fix.
+Official and custom logos use 100 x 48 CSS-pixel boxes, with `object-fit: contain`
+to preserve proportions and a wrapping row on narrow screens. Explicit CSS
+dimensions prevent generic storefront rules such as `main img { width: auto;
+height: auto; }` from expanding the images to their intrinsic size.
 
 ## 3. Review, build and publish the merchant storefront
 

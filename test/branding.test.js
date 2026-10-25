@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 import { build } from "esbuild";
 import { brandingSettings } from "../src/shared/branding.js";
-import { setupAzupayBranding } from "../storefront/eds.js";
+import { azupayPaymentSlot, setupAzupayBranding } from "../storefront/eds.js";
 
 describe("public store-scoped checkout branding", () => {
   it("uses safe text defaults and gates official logos on merchant permission", () => {
@@ -79,7 +79,7 @@ describe("public store-scoped checkout branding", () => {
   });
 });
 
-function transportFixture({ failed = false } = {}) {
+function transportFixture({ failed = false, logos = [] } = {}) {
   let hook;
   let hookCount = 0;
   const requests = [];
@@ -118,7 +118,7 @@ function transportFixture({ failed = false } = {}) {
         json: async () => ({
           title: "Pay securely",
           byline: "Your bank, your choice",
-          logos: [],
+          logos,
         }),
       };
     },
@@ -146,6 +146,69 @@ function transportFixture({ failed = false } = {}) {
 }
 
 describe("documented GraphQL branding hook", () => {
+  it("bounds every official/custom logo with CSS, not just overridable HTML dimensions", async (t) => {
+    const official = brandingSettings({
+      methods: "both",
+      officialLogoPermission: true,
+    }).logos;
+    const custom = {
+      url: "https://merchant.example/wide-logo.png",
+      alt: "Merchant logo",
+    };
+    const f = transportFixture({ logos: [...official, custom] });
+    await f.run();
+    function element(tagName) {
+      return {
+        tagName,
+        style: {},
+        dataset: {},
+        children: [],
+        append(child) {
+          this.children.push(child);
+        },
+        setAttribute() {},
+        addEventListener() {},
+      };
+    }
+    let rendered;
+    for (const [name, value] of Object.entries({
+      document: { createElement: element },
+      sessionStorage: { getItem: () => null },
+    })) {
+      const original = Object.getOwnPropertyDescriptor(globalThis, name);
+      Object.defineProperty(globalThis, name, { configurable: true, value });
+      t.after(() => {
+        if (original) Object.defineProperty(globalThis, name, original);
+        else delete globalThis[name];
+      });
+    }
+    azupayPaymentSlot.render({
+      cartId: f.response.data.cart.id,
+      replaceHTML: (node) => {
+        rendered = node;
+      },
+    });
+    const logos = rendered.children.find(
+      (node) => node.className === "azupay-payment-logos",
+    );
+    assert.equal(logos.style.flexWrap, "wrap");
+    assert.equal(logos.children.length, 3);
+    for (const [index, image] of logos.children.entries()) {
+      assert.equal(image.alt, [...official, custom][index].alt);
+      assert.equal(image.width, 100);
+      assert.equal(image.height, 48);
+      assert.deepEqual(image.style, {
+        width: "100px",
+        height: "48px",
+        maxWidth: "100%",
+        maxHeight: "48px",
+        minWidth: "0",
+        flex: "0 1 100px",
+        objectFit: "contain",
+      });
+      assert.equal(image.referrerPolicy, "no-referrer");
+    }
+  });
   it("updates actual selector and selected titles without changing other methods/data/auth", async () => {
     const f = transportFixture();
     const result = await f.run();

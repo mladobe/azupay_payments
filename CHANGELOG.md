@@ -4,6 +4,15 @@ Changes are grouped by implementation version. These entries describe local
 development history, not previously published GitHub releases or certification.
 The first public release is pending ownership/licence approval and acceptance.
 
+## 0.1.8
+
+- Constrain official and custom checkout logos to 100 x 48 CSS-pixel boxes with
+  preserved image proportions and wrapping, overriding generic storefront image
+  sizing that previously expanded the logos to their intrinsic dimensions.
+- Reviewed installer upgrades through 0.1.7 to 0.1.8. Existing storefronts must
+  install and publish the updated browser bundle; App Builder deployment alone
+  does not update EDS.
+
 ## 0.1.7
 
 - Explicit Adobe `auto` lifecycle upgrades after versioned deployments, so the

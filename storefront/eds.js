@@ -199,7 +199,16 @@ export const azupayPaymentSlot = {
         image.alt = logo.alt;
         image.width = 100;
         image.height = 48;
-        image.style.objectFit = "contain";
+        // CSS dimensions must override storefront rules such as main img { width: auto; height: auto; }.
+        Object.assign(image.style, {
+          width: "100px",
+          height: "48px",
+          maxWidth: "100%",
+          maxHeight: "48px",
+          minWidth: "0",
+          flex: "0 1 100px",
+          objectFit: "contain",
+        });
         image.referrerPolicy = "no-referrer";
         image.addEventListener(
           "error",
