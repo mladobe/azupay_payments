@@ -33,14 +33,14 @@ node dist/eds/bin/install.js --target /absolute/path/to/storefront --dry-run
 node dist/eds/bin/install.js --target /absolute/path/to/storefront
 ```
 
-For another merchant, distribute `dist/azupay-commerce-eds-0.1.8.tgz`.
+For another merchant, distribute `dist/azupay-commerce-eds-0.1.9.tgz`.
 This archive contains a self-contained Node installer, the browser bundle and
 this guide. It contains no Adobe/Azupay credentials and needs no additional
 runtime dependencies.
 
 ```sh
 mkdir azupay-eds-installer
-tar -xzf /path/to/azupay-commerce-eds-0.1.8.tgz -C azupay-eds-installer
+tar -xzf /path/to/azupay-commerce-eds-0.1.9.tgz -C azupay-eds-installer
 node azupay-eds-installer/package/bin/install.js \
   --target /absolute/path/to/storefront --dry-run
 node azupay-eds-installer/package/bin/install.js \
@@ -62,15 +62,15 @@ The installer:
 - Creates `.azupay-eds-installation.json` with release/content hashes. Repeating
   the same installer is a no-op. Edited installed files, unmanaged Azupay code,
   changed releases, symlinked targets and unsupported layouts fail explicitly.
-  The explicit `--upgrade` option supports reviewed releases 0.1.0 through 0.1.7
-  to 0.1.8 after verifying every installed file's hash.
+  The explicit `--upgrade` option supports reviewed releases 0.1.0 through 0.1.8
+  to 0.1.9 after verifying every installed file's hash.
 
 Preflight checks all planned edits before writing. Do not run concurrent
 installers or edit checkout files during installation. Keep the installation
 manifest with the source changes. For an upgrade, review both the merchant's
 checkout changes and the new release before replacing an installation.
 
-### Upgrade an unchanged 0.1.0 through 0.1.7 installation
+### Upgrade an unchanged 0.1.0 through 0.1.8 installation
 
 ```sh
 node dist/eds/bin/install.js --target /absolute/path/to/storefront --upgrade --dry-run
@@ -79,9 +79,9 @@ node dist/eds/bin/install.js --target /absolute/path/to/storefront --upgrade
 
 This updates the generated browser bundle, registers the live Azupay order-button
 label in `blocks/commerce-checkout/containers.js`, and updates the installation
-manifest (0.1.3 through 0.1.7 already have the button registration). For 0.1.0/0.1.1 it also
+manifest (0.1.3 through 0.1.8 already have the button registration). For 0.1.0/0.1.1 it also
 adds the documented GraphQL branding hook to `scripts/initializers/checkout.js`;
-an existing 0.1.2 through 0.1.7 initializer is preserved. The native
+an existing 0.1.2 through 0.1.8 initializer is preserved. The native
 order handler is unchanged. Publish all changed outputs through Code Sync.
 If any installed file has been edited since installation, stop and review it;
 the installer will not overwrite it or bypass hash verification.
@@ -98,6 +98,12 @@ Official and custom logos use 100 x 48 CSS-pixel boxes, with `object-fit: contai
 to preserve proportions and a wrapping row on narrow screens. Explicit CSS
 dimensions prevent generic storefront rules such as `main img { width: auto;
 height: auto; }` from expanding the images to their intrinsic size.
+
+Version 0.1.9 adds configurable customer education and terms links. Deploy the
+App Builder schema/backend and publish the upgraded browser bundle. New bundles
+tolerate older branding responses without guidance; older bundles ignore new
+guidance until upgraded. Payment validation and final native order confirmation
+are unchanged.
 
 ## 3. Review, build and publish the merchant storefront
 
@@ -157,12 +163,20 @@ appropriate store scope. Unlock inherited fields before editing, then save:
 
 | Setting | Usage |
 | --- | --- |
-| Checkout payment title | Plain-text payment-selector label, up to 100 characters; default: Azupay Real Time Payments |
+| Checkout payment title | Plain-text payment-selector label, up to 100 characters; default: Pay by Bank (existing custom titles are preserved) |
 | Checkout payment byline | Explanation in the selected payment detail panel, up to 250 characters; blank hides it |
 | Checkout logos | Official PayID/PayTo, Custom hosted images, or No images |
 | Permission to use official PayID / PayTo logos | Confirm only when your AP+ or payment-provider agreement grants usage rights |
 | Custom checkout image 1/2/3 URL | Public HTTPS image URLs from your existing media library |
 | Custom checkout image 1/2/3 description | Required accessible text for each configured custom image |
+| Show PayID / PayTo payment instructions | Show rail-specific instructions; does not hide education/terms links |
+| PayID education and PayTo instructions URLs / link text | Scoped customer help links; clear a URL to hide it |
+| PayTo terms and conditions URL / link text | Your own merchant terms, not a generic help article |
+| Merchant PayTo terms are available in hosted checkout | Confirm only when Azupay has configured your terms there |
+
+See [customer education, UX responsibilities and native payment ordering](ADMIN.md#customer-education-and-payto-terms).
+The browser integration preserves Commerce's method order. It does not add a
+frontend priority override or claim numeric Azupay sort-order support.
 
 Upload custom images to your storefront CMS/media library, not App Management;
 the native configuration UI has no file-upload control. Paste the resulting

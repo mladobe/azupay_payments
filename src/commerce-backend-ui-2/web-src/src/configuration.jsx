@@ -1,5 +1,10 @@
 import { useEffect, useRef, useState } from "react";
 import {
+  checkoutGuidanceWarnings,
+  educationLinks,
+  helpUrl,
+} from "../../../shared/checkout-guidance.js";
+import {
   configurationModel,
   configurationPatch,
   flattenScopes,
@@ -8,6 +13,12 @@ import {
 const limits = {
   checkoutTitle: 100,
   checkoutByline: 250,
+  ...Object.fromEntries(
+    educationLinks.flatMap((link) => [
+      [`${link.name}Url`, 2048],
+      [`${link.name}Label`, 100],
+    ]),
+  ),
   ...Object.fromEntries(
     [1, 2, 3].flatMap((index) => [
       [`checkoutLogo${index}Url`, 2048],
@@ -56,13 +67,11 @@ function ConfigurationField({ field, draft, disabled, update }) {
           type={
             field.name === "expiryMinutes"
               ? "number"
-              : /^checkoutLogo[123]Url$/.test(field.name)
+              : field.name.endsWith("Url")
                 ? "url"
                 : "text"
           }
-          pattern={
-            /^checkoutLogo[123]Url$/.test(field.name) ? "https://.*" : undefined
-          }
+          pattern={field.name.endsWith("Url") ? "https://.*" : undefined}
           required={field.name === "expiryMinutes"}
           min={field.name === "expiryMinutes" ? 5 : undefined}
           max={field.name === "expiryMinutes" ? 120 : undefined}
@@ -111,6 +120,15 @@ export function Configuration({ client }) {
   const [needsReload, setNeedsReload] = useState(false);
   const activeSave = useRef(null);
   const scope = scopes.find((item) => item.id === scopeId);
+  const effective = Object.fromEntries(
+    (fields ?? []).map((field) => [
+      field.name,
+      Object.hasOwn(draft, field.name)
+        ? (draft[field.name] ?? field.parentValue)
+        : field.value,
+    ]),
+  );
+  const guidanceWarnings = fields ? checkoutGuidanceWarnings(effective) : [];
   const patch = fields ? configurationPatch(fields, draft) : [];
   const dirty = patch.length > 0;
   const busy = phase === "loading" || phase === "saving";
@@ -197,7 +215,20 @@ export function Configuration({ client }) {
 
   function submit(event) {
     event.preventDefault();
-    if (event.currentTarget.closest("form").reportValidity()) void save();
+    if (!event.currentTarget.closest("form").reportValidity()) return;
+    try {
+      for (const link of educationLinks) {
+        const value = String(effective[`${link.name}Url`] ?? "").trim();
+        if (!value) continue;
+        helpUrl(value);
+        if (!String(effective[`${link.name}Label`] ?? "").trim())
+          throw new Error(`Enter link text for ${link.label}.`);
+      }
+    } catch (failure) {
+      setError(failure.message);
+      return;
+    }
+    void save();
   }
 
   async function save() {
@@ -246,6 +277,16 @@ export function Configuration({ client }) {
         These are the same scoped settings used by App Management and payment
         processing. No API keys are stored in this form.
       </p>
+      <p className="notice">
+        Payment order is supplied by Commerce. This app does not reorder other
+        payment methods. The current ACCS OOPE API does not expose a native
+        Azupay numeric sort-order setting.
+      </p>
+      {guidanceWarnings.map((warning) => (
+        <p key={warning} role="status" className="notice">
+          {warning}
+        </p>
+      ))}
       {error && (
         <p role="alert" className="notice">
           {error}

@@ -2,14 +2,132 @@ import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 import { build } from "esbuild";
 import { brandingSettings } from "../src/shared/branding.js";
+import {
+  checkoutGuidanceWarnings,
+  educationLinks,
+  helpUrl,
+} from "../src/shared/checkout-guidance.js";
 import { azupayPaymentSlot, setupAzupayBranding } from "../storefront/eds.js";
 
 describe("public store-scoped checkout branding", () => {
+  it("filters education by enabled rail, accepts singleton settings and preserves merchant titles", () => {
+    for (const methods of ["payid", "payto", "both"]) {
+      const result = brandingSettings({
+        methods: [methods],
+        checkoutTitle: "Merchant label",
+      });
+      assert.equal(result.title, "Merchant label");
+      assert.deepEqual(
+        result.guidance.methods,
+        methods === "both" ? ["payid", "payto"] : [methods],
+      );
+      assert.ok(
+        result.guidance.links.every((link) =>
+          result.guidance.methods.includes(link.method),
+        ),
+      );
+      assert.equal(
+        result.guidance.links.some((link) => link.kind === "terms"),
+        false,
+      );
+    }
+  });
+  it("supports scoped custom education, hidden links, instructions off and merchant-specific terms", () => {
+    const result = brandingSettings({
+      methods: "both",
+      checkoutGuidanceEnabled: false,
+      payidEducationUrl: "https://merchant.example/help#payid",
+      payidEducationLabel: "How our bank payments work",
+      payidInstructionsUrl: "",
+      paytoTermsUrl: "https://merchant.example/payto-terms",
+      paytoTermsLabel: "Our PayTo terms",
+    });
+    assert.equal(result.guidance.showInstructions, false);
+    assert.ok(
+      result.guidance.links.some(
+        (link) =>
+          link.label === "How our bank payments work" &&
+          link.url.endsWith("#payid"),
+      ),
+    );
+    assert.ok(
+      !result.guidance.links.some(
+        (link) => link.label === "PayID step-by-step instructions",
+      ),
+    );
+    assert.deepEqual(result.guidance.links.at(-1), {
+      method: "payto",
+      kind: "terms",
+      label: "Our PayTo terms",
+      url: "https://merchant.example/payto-terms",
+    });
+  });
+  it("rejects unsafe links, invalid labels and instructions without fetching merchant URLs", () => {
+    for (const url of [
+      "javascript:alert(1)",
+      "http://merchant.example/help",
+      "//merchant.example/help",
+      "https://user:password@merchant.example/help",
+    ]) {
+      assert.throws(() => helpUrl(url));
+      assert.throws(() => brandingSettings({ payidEducationUrl: url }), {
+        code: "INVALID_BRANDING",
+      });
+    }
+    for (const config of [
+      { payidEducationLabel: "" },
+      { payidEducationLabel: "x".repeat(101) },
+      { checkoutGuidanceEnabled: "false" },
+    ])
+      assert.throws(() => brandingSettings(config), {
+        code: "INVALID_BRANDING",
+      });
+  });
+  it("warns admins about missing PayTo terms and logo approval without inventing merchant terms", () => {
+    assert.match(
+      checkoutGuidanceWarnings({ methods: "both" })[0],
+      /merchant PayTo terms/,
+    );
+    assert.deepEqual(checkoutGuidanceWarnings({ methods: "payid" }), []);
+    assert.deepEqual(
+      checkoutGuidanceWarnings({
+        methods: ["payto"],
+        paytoTermsUrl: "https://merchant.example/terms",
+      }),
+      [],
+    );
+    assert.deepEqual(
+      checkoutGuidanceWarnings({
+        methods: "both",
+        paytoTermsInHostedCheckout: true,
+      }),
+      [],
+    );
+    assert.match(
+      checkoutGuidanceWarnings({
+        methods: "payid",
+        checkoutLogoMode: "none",
+      })[0],
+      /approved payment marks/,
+    );
+  });
   it("uses safe text defaults and gates official logos on merchant permission", () => {
     assert.deepEqual(brandingSettings({ methods: "both" }), {
-      title: "Azupay Real Time Payments",
+      title: "Pay by Bank",
       byline: "Pay securely from your bank account.",
       logos: [],
+      guidance: {
+        methods: ["payid", "payto"],
+        showInstructions: true,
+        links: educationLinks
+          .filter((link) => link.url)
+          .map((link) => ({
+            method: link.method,
+            label: link.label,
+            url: new URL(link.url).href,
+            kind: "education",
+          })),
+      },
     });
     for (const [methods, expected] of [
       ["payid", ["PayID"]],
@@ -79,7 +197,12 @@ describe("public store-scoped checkout branding", () => {
   });
 });
 
-function transportFixture({ failed = false, logos = [] } = {}) {
+function transportFixture({
+  failed = false,
+  logos = [],
+  guidance,
+  cartId = `cart-${failed ? "failed" : "success"}`,
+} = {}) {
   let hook;
   let hookCount = 0;
   const requests = [];
@@ -119,6 +242,7 @@ function transportFixture({ failed = false, logos = [] } = {}) {
           title: "Pay securely",
           byline: "Your bank, your choice",
           logos,
+          ...(guidance === undefined ? {} : { guidance }),
         }),
       };
     },
@@ -126,7 +250,7 @@ function transportFixture({ failed = false, logos = [] } = {}) {
   const response = {
     data: {
       cart: {
-        id: `cart-${failed ? "failed" : "success"}`,
+        id: cartId,
         email: "preserved",
         available_payment_methods: [
           method,
@@ -146,6 +270,62 @@ function transportFixture({ failed = false, logos = [] } = {}) {
 }
 
 describe("documented GraphQL branding hook", () => {
+  it("preserves Commerce payment ordering and other method settings exactly", async () => {
+    const f = transportFixture({
+      guidance: brandingSettings({ methods: "both" }).guidance,
+    });
+    const before = { code: "card_first", title: "Card", sort_order: 1 };
+    const after = { code: "bank_last", title: "Other bank", sort_order: 100 };
+    f.response.data.cart.available_payment_methods.unshift(before);
+    f.response.data.cart.available_payment_methods.push(after);
+    const result = await f.run();
+    assert.deepEqual(
+      result.data.cart.available_payment_methods.map((method) => method.code),
+      f.response.data.cart.available_payment_methods.map(
+        (method) => method.code,
+      ),
+    );
+    assert.deepEqual(result.data.cart.available_payment_methods[0], before);
+    assert.deepEqual(result.data.cart.available_payment_methods.at(-1), after);
+  });
+  it("rejects untrusted guidance while keeping checkout available and logging the failure", async (t) => {
+    const logs = [];
+    t.mock.method(console, "error", (code) => logs.push(code));
+    for (const guidance of [
+      {
+        methods: ["payto"],
+        showInstructions: true,
+        links: [
+          {
+            method: "payto",
+            label: "Help",
+            kind: "education",
+            url: "javascript:alert(1)",
+          },
+        ],
+      },
+      { methods: ["unknown"], showInstructions: true, links: [] },
+      {
+        methods: ["payid"],
+        showInstructions: true,
+        links: [
+          {
+            method: "payto",
+            label: "Wrong rail",
+            kind: "education",
+            url: "https://example.com",
+          },
+        ],
+      },
+    ]) {
+      const f = transportFixture({ guidance });
+      assert.deepEqual(await f.run(), f.response);
+    }
+    assert.equal(logs.length, 3);
+    assert.ok(
+      logs.every((code) => code === "[azupay] CHECKOUT_BRANDING_UNAVAILABLE"),
+    );
+  });
   it("bounds every official/custom logo with CSS, not just overridable HTML dimensions", async (t) => {
     const official = brandingSettings({
       methods: "both",
@@ -299,6 +479,7 @@ it("public branding action validates CORS, resolves store code server-side and e
     title: "Store seven",
     byline: "Bonjour",
     logos: [],
+    guidance: brandingSettings({ methods: "both" }).guidance,
   });
   assert.equal(result.headers["cache-control"], "no-store");
   assert.equal(

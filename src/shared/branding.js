@@ -1,4 +1,5 @@
-import { DEFAULT_TITLE } from "./identity.js";
+import { educationLinks, helpUrl } from "./checkout-guidance.js";
+import { DEFAULT_CHECKOUT_TITLE } from "./identity.js";
 import { requireValue } from "./payment.js";
 
 export { DEFAULT_TITLE } from "./identity.js";
@@ -47,7 +48,7 @@ export function logoUrl(value) {
 export function brandingSettings(config) {
   const title = text(
     config.checkoutTitle,
-    DEFAULT_TITLE,
+    DEFAULT_CHECKOUT_TITLE,
     100,
     "Checkout title",
   );
@@ -58,6 +59,16 @@ export function brandingSettings(config) {
     250,
     "Checkout byline",
   );
+  const methods =
+    Array.isArray(config.methods) && config.methods.length === 1
+      ? config.methods[0]
+      : (config.methods ?? "payid");
+  requireValue(
+    ["payid", "payto", "both"].includes(methods),
+    "INVALID_BRANDING",
+    "Choose a valid payment method.",
+  );
+  const enabledMethods = methods === "both" ? ["payid", "payto"] : [methods];
   const selected = config.checkoutLogoMode ?? "official";
   const mode =
     Array.isArray(selected) && selected.length === 1 ? selected[0] : selected;
@@ -68,9 +79,7 @@ export function brandingSettings(config) {
   );
   const logos = [];
   if (mode === "official" && config.officialLogoPermission === true) {
-    for (const method of config.methods === "both"
-      ? ["payid", "payto"]
-      : [config.methods]) {
+    for (const method of enabledMethods) {
       requireValue(
         method in OFFICIAL_LOGOS,
         "INVALID_BRANDING",
@@ -108,5 +117,55 @@ export function brandingSettings(config) {
       logos.push({ url, alt });
     }
   }
-  return { title, byline, logos };
+  const links = [];
+  for (const link of educationLinks.filter((item) =>
+    enabledMethods.includes(item.method),
+  )) {
+    const value = text(
+      config[`${link.name}Url`],
+      link.url,
+      2048,
+      `${link.label} URL`,
+    );
+    if (!value) continue;
+    let url;
+    try {
+      url = helpUrl(value);
+    } catch (error) {
+      requireValue(false, "INVALID_BRANDING", error.message);
+    }
+    const label = text(
+      config[`${link.name}Label`],
+      link.label,
+      100,
+      `${link.label} link text`,
+    );
+    requireValue(
+      label.length > 0,
+      "INVALID_BRANDING",
+      "Enter link text for every configured help URL.",
+    );
+    links.push({
+      method: link.method,
+      label,
+      url,
+      kind: link.name === "paytoTerms" ? "terms" : "education",
+    });
+  }
+  requireValue(
+    config.checkoutGuidanceEnabled === undefined ||
+      typeof config.checkoutGuidanceEnabled === "boolean",
+    "INVALID_BRANDING",
+    "Choose a valid payment instructions setting.",
+  );
+  return {
+    title,
+    byline,
+    logos,
+    guidance: {
+      methods: enabledMethods,
+      showInstructions: config.checkoutGuidanceEnabled ?? true,
+      links,
+    },
+  };
 }

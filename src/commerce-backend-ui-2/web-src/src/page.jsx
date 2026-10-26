@@ -108,6 +108,11 @@ export function AdminPage({ connected, client = null, connectionError = "" }) {
               Set your checkout title, byline and permitted hosted logo images.
             </li>
             <li>
+              Customize education link URLs and text for each payment rail.
+              Clear a URL to hide that link. Provide your merchant PayTo terms
+              URL or confirm those terms are configured in hosted checkout.
+            </li>
+            <li>
               Enable automatic invoicing only after verifying the reconciliation
               timer.
             </li>
@@ -125,6 +130,19 @@ export function AdminPage({ connected, client = null, connectionError = "" }) {
           <ExternalLink href={`${guide}README.md`}>
             Installation and configuration guide
           </ExternalLink>
+          <p>
+            Follow the{" "}
+            <ExternalLink href="https://helpcentre.azupay.com.au/docs/payid-ux-guide">
+              PayID UX guide
+            </ExternalLink>{" "}
+            and{" "}
+            <ExternalLink href="https://helpcentre.azupay.com.au/docs/payto-ux-guide">
+              PayTo UX guide
+            </ExternalLink>
+            . The storefront preserves Commerce's payment-method order. This
+            Cloud Service integration does not currently expose native numeric
+            Azupay priority.
+          </p>
         </section>
         <section aria-labelledby="test-heading">
           <h2 id="test-heading">Run a demo or UAT payment</h2>

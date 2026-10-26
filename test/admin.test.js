@@ -8,7 +8,11 @@ import { parse } from "yaml";
 import config from "../app.commerce.config.js";
 import { brandingSettings } from "../src/shared/branding.js";
 import { configSchema } from "../src/shared/config-schema.js";
-import { APP_ID, DEFAULT_TITLE } from "../src/shared/identity.js";
+import {
+  APP_ID,
+  DEFAULT_CHECKOUT_TITLE,
+  DEFAULT_TITLE,
+} from "../src/shared/identity.js";
 
 async function moduleFromBuild(options) {
   const { outputFiles } = await build({
@@ -78,9 +82,9 @@ describe("V2 admin menu and payment identity", () => {
     assert.equal(DEFAULT_TITLE, "Azupay Real Time Payments");
     assert.equal(
       configSchema.find(({ name }) => name === "checkoutTitle").default,
-      DEFAULT_TITLE,
+      DEFAULT_CHECKOUT_TITLE,
     );
-    assert.equal(brandingSettings({}).title, DEFAULT_TITLE);
+    assert.equal(brandingSettings({}).title, DEFAULT_CHECKOUT_TITLE);
     for (const checkoutTitle of ["Merchant bank checkout", "Pay by bank"]) {
       assert.equal(brandingSettings({ checkoutTitle }).title, checkoutTitle);
     }
@@ -134,7 +138,7 @@ describe("V2 admin menu and payment identity", () => {
       assert.equal(request.path, "oope_payment_method/");
       const method = request.payment_method;
       assert.equal(method.code, "azupay");
-      assert.equal(method.title, DEFAULT_TITLE);
+      assert.equal(method.title, DEFAULT_CHECKOUT_TITLE);
       assert.equal(method.active, index === 0);
       assert.equal(method.order_status, "pending");
       assert.equal(
@@ -160,6 +164,16 @@ describe("admin operations page", () => {
     assert.match(html, /Apps &gt; App Management/);
     assert.match(html, /not a live payment dashboard/);
     assert.match(html, /Online Commerce refunds are not supported/);
+    assert.match(html, /Customize education link URLs and text/);
+    assert.match(
+      html,
+      /https:\/\/helpcentre\.azupay\.com\.au\/docs\/payid-ux-guide/,
+    );
+    assert.match(
+      html,
+      /https:\/\/helpcentre\.azupay\.com\.au\/docs\/payto-ux-guide/,
+    );
+    assert.match(html, /preserves Commerce&#x27;s payment-method order/);
     assert.doesNotMatch(html, /imsToken|imsOrgId|role="alert"/);
     assert.match(
       html,

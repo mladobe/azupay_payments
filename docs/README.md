@@ -225,7 +225,8 @@ allowed in `frame-src`; it always offers a same-payment full-page escape.
 Reload checkout after saving branding. Presentation changes apply only to new
 payment sessions.
 
-The default checkout title is **Azupay Real Time Payments**. Existing saved
+The default checkout title is **Pay by Bank**; the app/menu name remains
+**Azupay Real Time Payments**. Existing saved
 titles are not overwritten; set an explicit scoped title if upgrading from the
 old label. See [name migration](ADMIN.md#app-and-checkout-names).
 

@@ -1,3 +1,7 @@
+import {
+  helpUrl,
+  paymentInstructions,
+} from "../src/shared/checkout-guidance.js";
 import { attachPaymentMethod } from "./commerce.js";
 import { hasPendingPayment, hostedCheckout } from "./flow.js";
 
@@ -29,6 +33,35 @@ function validateBranding(value) {
       logo.alt.length > 100
     )
       throw new Error("Invalid checkout logo response.");
+  }
+  // Older deployed branding actions may not provide guidance yet.
+  if (value.guidance !== undefined) {
+    const guidance = value.guidance;
+    if (
+      !Array.isArray(guidance?.methods) ||
+      guidance.methods.length < 1 ||
+      guidance.methods.length > 2 ||
+      new Set(guidance.methods).size !== guidance.methods.length ||
+      guidance.methods.some(
+        (method) => !Object.hasOwn(paymentInstructions, method),
+      ) ||
+      typeof guidance.showInstructions !== "boolean" ||
+      !Array.isArray(guidance.links) ||
+      guidance.links.length > 6
+    )
+      throw new Error("Invalid payment guidance response.");
+    for (const link of guidance.links) {
+      if (
+        !guidance.methods.includes(link.method) ||
+        !["education", "terms"].includes(link.kind) ||
+        typeof link.label !== "string" ||
+        !link.label.trim() ||
+        link.label.length > 100 ||
+        typeof link.url !== "string"
+      )
+        throw new Error("Invalid payment education link.");
+      helpUrl(link.url);
+    }
   }
   return value;
 }
@@ -225,6 +258,31 @@ export const azupayPaymentSlot = {
         logos.append(image);
       }
       container.append(logos);
+    }
+    const guidance = branding?.guidance;
+    if (guidance?.showInstructions) {
+      for (const method of guidance.methods) {
+        const instruction = document.createElement("p");
+        instruction.textContent = paymentInstructions[method];
+        container.append(instruction);
+      }
+    }
+    if (guidance?.links.length) {
+      const links = document.createElement("ul");
+      links.className = "azupay-payment-help";
+      links.setAttribute("aria-label", "Payment education and terms");
+      for (const link of guidance.links) {
+        const item = document.createElement("li");
+        const anchor = document.createElement("a");
+        anchor.href = link.url;
+        anchor.textContent = `${link.label} (opens in a new tab)`;
+        anchor.target = "_blank";
+        anchor.rel = "noopener noreferrer";
+        anchor.referrerPolicy = "no-referrer";
+        item.append(anchor);
+        links.append(item);
+      }
+      container.append(links);
     }
     const message = document.createElement("p");
     message.dataset.azupayStatus = "";

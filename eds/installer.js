@@ -392,7 +392,7 @@ export async function installEds({
     if (!changed)
       return { status: "unchanged", files: Object.keys(manifest.files) };
     if (
-      VERSION !== "0.1.8" ||
+      VERSION !== "0.1.9" ||
       ![
         "0.1.0",
         "0.1.1",
@@ -402,10 +402,11 @@ export async function installEds({
         "0.1.5",
         "0.1.6",
         "0.1.7",
+        "0.1.8",
       ].includes(manifest.version)
     )
       throw new Error(
-        "Only the reviewed 0.1.0 through 0.1.7 to 0.1.8 upgrade is supported.",
+        "Only the reviewed 0.1.0 through 0.1.8 to 0.1.9 upgrade is supported.",
       );
     const initializerPath = await safePath(root, INITIALIZER);
     const oldInitializer = await readFile(initializerPath, "utf8");
@@ -414,9 +415,14 @@ export async function installEds({
       : oldInitializer;
     const containersPath = await safePath(root, CONTAINERS);
     const oldContainers = await readFile(containersPath, "utf8");
-    const containers = ["0.1.3", "0.1.4", "0.1.5", "0.1.6", "0.1.7"].includes(
-      manifest.version,
-    )
+    const containers = [
+      "0.1.3",
+      "0.1.4",
+      "0.1.5",
+      "0.1.6",
+      "0.1.7",
+      "0.1.8",
+    ].includes(manifest.version)
       ? oldContainers
       : patchModalButton(oldContainers);
     const files = [

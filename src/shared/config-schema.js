@@ -1,4 +1,5 @@
-import { DEFAULT_TITLE } from "./identity.js";
+import { educationLinks } from "./checkout-guidance.js";
+import { DEFAULT_CHECKOUT_TITLE } from "./identity.js";
 
 export const configSchema = [
   {
@@ -77,10 +78,46 @@ export const configSchema = [
     name: "checkoutTitle",
     label: "Checkout payment title",
     type: "text",
-    default: DEFAULT_TITLE,
+    default: DEFAULT_CHECKOUT_TITLE,
     description:
-      "Name shown for this payment method in the checkout selector. Enter plain text, up to 100 characters. Refresh checkout after saving.",
+      "Name shown for this payment method in the checkout selector. Pay by Bank is recommended by Azupay's UX guides. Enter plain text, up to 100 characters. Existing custom titles are preserved. Refresh checkout after saving.",
   },
+  {
+    name: "checkoutGuidanceEnabled",
+    label: "Show PayID / PayTo payment instructions",
+    type: "boolean",
+    default: true,
+    description:
+      "Shows instructions only for your enabled methods. PayID uses the recipient PayID displayed in hosted checkout. PayTo requires approval of a PayTo agreement in the customer's bank. Education and terms links below are separate from the instructions.",
+  },
+  {
+    name: "paytoTermsInHostedCheckout",
+    label: "Merchant PayTo terms are available in hosted checkout",
+    type: "boolean",
+    default: false,
+    description:
+      "Confirm only after Azupay has added your merchant-specific PayTo terms to its hosted checkout. Otherwise set the PayTo terms URL below before launch. A generic help article is not a substitute for your terms. Acceptance and bank authorisation remain in the hosted flow.",
+  },
+  ...educationLinks.flatMap((link) => [
+    {
+      name: `${link.name}Url`,
+      label: `${link.label} URL`,
+      type: "text",
+      default: link.url,
+      description:
+        link.name === "paytoTerms"
+          ? "Public HTTPS URL for your own merchant PayTo terms. Required before launch unless confirmed in hosted checkout. Leave blank only while preparing UAT; configure per store scope. No API keys or HTML."
+          : "Customer-facing HTTPS education link. Replace with your own help page if preferred, or clear to hide this link. Only shown when its payment method is enabled. No API keys or HTML. Refresh checkout after saving.",
+    },
+    {
+      name: `${link.name}Label`,
+      label: `${link.label} link text`,
+      type: "text",
+      default: link.label,
+      description:
+        "Accessible plain-text link label, up to 100 characters. Required when its URL is set. Links open in a new tab so the customer's checkout stays available.",
+    },
+  ]),
   {
     name: "checkoutByline",
     label: "Checkout payment byline",

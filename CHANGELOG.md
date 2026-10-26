@@ -4,6 +4,20 @@ Changes are grouped by implementation version. These entries describe local
 development history, not previously published GitHub releases or certification.
 The first public release is pending ownership/licence approval and acceptance.
 
+## 0.1.9
+
+- Shopper default title is Pay by Bank; the app/menu name and merchant-customized
+  checkout titles are unchanged.
+- Store-scoped education URLs and labels for PayID information, steps, benefits
+  and further reading, PayTo bank approval help and merchant PayTo terms.
+- Method-aware instructions distinguish recipient PayID transfers from PayTo
+  agreements and bank authorisation. Missing merchant terms/mark approval is
+  flagged in the embedded admin editor.
+- Preserve Commerce's returned method order without a frontend priority
+  override. Current ACCS OOPE APIs do not expose native Azupay numeric sort order.
+- Reviewed portable installer migrations through 0.1.8; deploy the backend/schema
+  and publish the updated storefront bundle for the new guidance.
+
 ## 0.1.8
 
 - Constrain official and custom checkout logos to 100 x 48 CSS-pixel boxes with

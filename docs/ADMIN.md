@@ -140,8 +140,9 @@ in the target tenant; a standalone browser preview is not that acceptance test.
 
 ## App and checkout names
 
-The app display name, admin menu label, newly registered OOPE payment title and
-checkout-title default are **Azupay Real Time Payments**. The existing app ID
+The app display name and admin menu remain **Azupay Real Time Payments**.
+From 0.1.9, the shopper-facing default and newly registered OOPE payment title
+are **Pay by Bank**, following Azupay's UX naming recommendation. The existing app ID
 `azupay-pay-by-bank`, payment code `azupay`, Runtime action names, receipt/session
 contracts and storefront installer identity remain unchanged.
 
@@ -157,6 +158,65 @@ Commerce method record. Do not assume a redeploy reruns installation. The
 storefront branding hook applies the effective scoped title on supported EDS
 checkouts. No manual edits to the merchant's generated browser bundle are needed.
 
+## Customer education and PayTo terms
+
+Configuration includes rail-specific education URLs and link text, inherited
+through the same store scopes as other settings:
+
+- PayID information, step-by-step instructions, benefits and further reading.
+- PayTo bank approval instructions.
+- Your merchant-specific PayTo terms URL and link text.
+
+Defaults point to customer education resources linked by Azupay's
+[PayID UX guide](https://helpcentre.azupay.com.au/docs/payid-ux-guide) and
+[PayTo UX guide](https://helpcentre.azupay.com.au/docs/payto-ux-guide).
+Replace a URL/label with your own accessible help content. Clear a URL to hide
+that link. URLs must be absolute HTTPS without credentials (anchors are allowed);
+labels must be nonempty plain text up to 100 characters. Links open in a new tab
+without an opener or referrer. Only links for enabled methods are returned.
+Changes apply after refreshing checkout; API credentials never enter the links.
+
+**Show PayID / PayTo payment instructions** controls the explanatory paragraphs
+independently of the links. PayID wording distinguishes a transfer to the
+recipient PayID from the customer's own PayID. PayTo wording refers to a
+**PayTo agreement**, bank-app/internet-banking approval and the separate need to
+verify settlement. Both appear when both methods are enabled.
+
+Before launch, supply your merchant PayTo terms URL, or arrange with Azupay to
+host those terms and confirm **Merchant PayTo terms are available in hosted
+checkout**. The embedded editor warns when neither is configured. Generic help
+or marketing content is not a replacement for your legal terms. The extension
+does not invent terms, claim consent was recorded, or add a local checkbox that
+could conflict with the hosted payment flow. Review the actual hosted acceptance
+and authorisation experience with Azupay.
+
+The combined payment option and existing logo permission gate remain. The editor
+also warns when logos are disabled or official logo permission is absent.
+Configure approved marks before launch; do not enable permission without usage
+rights. Hosted checkout remains responsible for displaying amount, merchant
+identity, recipient PayID, payment description/copy controls, PayTo account input,
+terms acceptance, approval progress and expiry. Verify all of these in real UAT.
+These changes implement the storefront education portions of the guides, not
+certification or every optional recommendation (such as incentives/cashback).
+
+## Payment priority and native Commerce ordering
+
+The integration preserves the exact `available_payment_methods` order returned
+by Commerce and does not select/reorder other methods. Continue configuring
+other methods' native **Sort Order** in Commerce Admin.
+
+The current ACCS OOPE REST schema has no top-level `sort_order` property. A
+read-only check of the tenant's `system/config` API returned native sort orders
+for standard methods but did not expose `payment/azupay/sort_order`. The
+system-config update API accepts only allowed/visible/ACL-authorized paths.
+There is therefore no supported numeric Azupay priority control in this version;
+the app does not offer a nonfunctional field, guess another method's priority,
+or force Azupay to the top. A custom storefront that reorders methods independently
+must be reviewed separately.
+
+See Adobe's [OOPE payment API](https://developer.adobe.com/commerce/extensibility/starter-kit/checkout/payment-reference)
+and [ACCS REST reference](https://developer.adobe.com/commerce/webapi/reference/rest/saas/).
+
 ## PHP extension comparison
 
 Reviewed against Azupay's Marketplace
@@ -170,7 +230,7 @@ parity or certification; the PHP module targets a different deployment model.
 | Enable/disable and customer-facing title | Supported in native scoped configuration; title, byline and logos are configurable |
 | Test/production selection and API key | UAT/production selection supported; keys deliberately remain in private deployment profiles, not browser/admin form fields |
 | Checkout App enablement, payment options, company logo/accent | Configure Azupay's hosted Checkout App in its merchant dashboard; Commerce-side branding does not replace hosted appearance settings |
-| Payment method sort order | No dedicated setting yet; payment-list ordering remains the merchant checkout's responsibility |
+| Payment method sort order | Native Commerce order is preserved; current ACCS OOPE API does not expose an editable numeric Azupay sort order |
 | Debug switch and local Magento log files | No merchant-facing debug toggle or PHP log files; use restricted App Builder activations and error codes without exposing payment payloads or tokens |
 | Automatic invoice after payment | Supported through independent server verification and scheduled reconciliation, normally within the next five-minute run rather than an immediate provider callback |
 | Full and partial online refunds through credit memos | Not implemented; `can_refund` remains false. Use an authorized dashboard refund and matching offline Commerce credit memo |
