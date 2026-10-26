@@ -33,14 +33,14 @@ node dist/eds/bin/install.js --target /absolute/path/to/storefront --dry-run
 node dist/eds/bin/install.js --target /absolute/path/to/storefront
 ```
 
-For another merchant, distribute `dist/azupay-commerce-eds-0.1.10.tgz`.
+For another merchant, distribute `dist/azupay-commerce-eds-0.1.11.tgz`.
 This archive contains a self-contained Node installer, the browser bundle and
 this guide. It contains no Adobe/Azupay credentials and needs no additional
 runtime dependencies.
 
 ```sh
 mkdir azupay-eds-installer
-tar -xzf /path/to/azupay-commerce-eds-0.1.10.tgz -C azupay-eds-installer
+tar -xzf /path/to/azupay-commerce-eds-0.1.11.tgz -C azupay-eds-installer
 node azupay-eds-installer/package/bin/install.js \
   --target /absolute/path/to/storefront --dry-run
 node azupay-eds-installer/package/bin/install.js \
@@ -62,15 +62,15 @@ The installer:
 - Creates `.azupay-eds-installation.json` with release/content hashes. Repeating
   the same installer is a no-op. Edited installed files, unmanaged Azupay code,
   changed releases, symlinked targets and unsupported layouts fail explicitly.
-  The explicit `--upgrade` option supports reviewed releases 0.1.0 through 0.1.9
-  to 0.1.10 after verifying every installed file's hash.
+  The explicit `--upgrade` option supports reviewed releases 0.1.0 through 0.1.10
+  to 0.1.11 after verifying every installed file's hash.
 
 Preflight checks all planned edits before writing. Do not run concurrent
 installers or edit checkout files during installation. Keep the installation
 manifest with the source changes. For an upgrade, review both the merchant's
 checkout changes and the new release before replacing an installation.
 
-### Upgrade an unchanged 0.1.0 through 0.1.9 installation
+### Upgrade an unchanged 0.1.0 through 0.1.10 installation
 
 ```sh
 node dist/eds/bin/install.js --target /absolute/path/to/storefront --upgrade --dry-run
@@ -79,9 +79,9 @@ node dist/eds/bin/install.js --target /absolute/path/to/storefront --upgrade
 
 This updates the generated browser bundle, registers the live Azupay order-button
 label in `blocks/commerce-checkout/containers.js`, and updates the installation
-manifest (0.1.3 through 0.1.9 already have the button registration). For 0.1.0/0.1.1 it also
+manifest (0.1.3 through 0.1.10 already have the button registration). For 0.1.0/0.1.1 it also
 adds the documented GraphQL branding hook to `scripts/initializers/checkout.js`;
-an existing 0.1.2 through 0.1.9 initializer is preserved. The native
+an existing 0.1.2 through 0.1.10 initializer is preserved. The native
 order handler is unchanged. Publish all changed outputs through Code Sync.
 If any installed file has been edited since installation, stop and review it;
 the installer will not overwrite it or bypass hash verification.
@@ -111,6 +111,13 @@ new browser bundle for configured textarea content. An older branding backend
 still works: its enabled-rail instructions appear inside the popover. PayTo terms
 stay outside the popover and are not hidden by the instructions toggle. No
 changes to Azupay's hosted checkout are made.
+
+Version 0.1.11 removes the five legacy education/approval URL and label pairs
+from the configuration schema and public branding. It keeps the combined tooltip
+and merchant PayTo terms URL/label. Deploy the backend and configuration/admin
+assets for this cleanup. The 0.1.10 browser payload is unchanged and does not
+require reinstalling; an optional installer upgrade updates its manifest.
+Older 0.1.9 clients no longer receive external education links.
 
 ## 3. Review, build and publish the merchant storefront
 
@@ -179,7 +186,6 @@ appropriate store scope. Unlock inherited fields before editing, then save:
 | Show payment instructions tooltip | Show one combined instruction popover; does not hide terms |
 | Payment instructions tooltip label | Trigger/heading, up to 100 characters; default: How do I pay by bank? |
 | Payment instructions | Plain-text textarea, up to 4,000 characters; preserves line breaks; blank hides the popover |
-| PayID education and PayTo instructions URLs / link text | Legacy help links for 0.1.9 storefronts; not displayed by 0.1.10 |
 | PayTo terms and conditions URL / link text | Your own merchant terms, not a generic help article |
 | Merchant PayTo terms are available in hosted checkout | Confirm only when Azupay has configured your terms there |
 

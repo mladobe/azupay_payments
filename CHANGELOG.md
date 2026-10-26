@@ -4,6 +4,16 @@ Changes are grouped by implementation version. These entries describe local
 development history, not previously published GitHub releases or certification.
 The first public release is pending ownership/licence approval and acceptance.
 
+## 0.1.11
+
+- Remove the five legacy PayID education and PayTo bank-approval URL/label
+  pairs from the shared admin schema, editor validation and public branding.
+  Previously stored legacy values are ignored rather than blocking checkout.
+- Keep the combined tooltip textarea/label and merchant PayTo terms URL/label.
+  Actual bank authorisation, payment flow and saved current settings are unchanged.
+- Reviewed installer migrations through 0.1.10. This backend/admin cleanup does
+  not change the 0.1.10 browser payload or require a storefront reinstall.
+
 ## 0.1.10
 
 - Replace expanded checkout instructions and external education links with one

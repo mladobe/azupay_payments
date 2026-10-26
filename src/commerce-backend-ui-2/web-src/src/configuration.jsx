@@ -1,7 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import {
   checkoutGuidanceWarnings,
-  educationLinks,
   helpUrl,
 } from "../../../shared/checkout-guidance.js";
 import {
@@ -15,12 +14,8 @@ const limits = {
   checkoutByline: 250,
   checkoutInstructionsLabel: 100,
   checkoutInstructions: 4000,
-  ...Object.fromEntries(
-    educationLinks.flatMap((link) => [
-      [`${link.name}Url`, 2048],
-      [`${link.name}Label`, 100],
-    ]),
-  ),
+  paytoTermsUrl: 2048,
+  paytoTermsLabel: 100,
   ...Object.fromEntries(
     [1, 2, 3].flatMap((index) => [
       [`checkoutLogo${index}Url`, 2048],
@@ -232,12 +227,11 @@ export function Configuration({ client }) {
         !String(effective.checkoutInstructionsLabel ?? "").trim()
       )
         throw new Error("Enter a label for the payment instructions.");
-      for (const link of educationLinks) {
-        const value = String(effective[`${link.name}Url`] ?? "").trim();
-        if (!value) continue;
+      const value = String(effective.paytoTermsUrl ?? "").trim();
+      if (value) {
         helpUrl(value);
-        if (!String(effective[`${link.name}Label`] ?? "").trim())
-          throw new Error(`Enter link text for ${link.label}.`);
+        if (!String(effective.paytoTermsLabel ?? "").trim())
+          throw new Error("Enter link text for the PayTo terms URL.");
       }
     } catch (failure) {
       setError(failure.message);

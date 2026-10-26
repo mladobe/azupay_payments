@@ -1,7 +1,7 @@
 import {
   DEFAULT_INSTRUCTIONS,
   DEFAULT_INSTRUCTIONS_LABEL,
-  educationLinks,
+  DEFAULT_TERMS_LABEL,
 } from "./checkout-guidance.js";
 import { DEFAULT_CHECKOUT_TITLE } from "./identity.js";
 
@@ -118,26 +118,22 @@ export const configSchema = [
     description:
       "Confirm only after Azupay has added your merchant-specific PayTo terms to its hosted checkout. Otherwise set the PayTo terms URL below before launch. A generic help article is not a substitute for your terms. Acceptance and bank authorisation remain in the hosted flow.",
   },
-  ...educationLinks.flatMap((link) => [
-    {
-      name: `${link.name}Url`,
-      label: `${link.label} URL`,
-      type: "text",
-      default: link.url,
-      description:
-        link.name === "paytoTerms"
-          ? "Public HTTPS URL for your own merchant PayTo terms. Required before launch unless confirmed in hosted checkout. Leave blank only while preparing UAT; configure per store scope. No API keys or HTML."
-          : "Legacy customer-facing HTTPS education link for 0.1.9 storefronts. Current storefronts use the combined instructions tooltip instead; these values are retained for older clients. Replace with your own help page or clear to hide the legacy link. No API keys or HTML.",
-    },
-    {
-      name: `${link.name}Label`,
-      label: `${link.label} link text`,
-      type: "text",
-      default: link.label,
-      description:
-        "Accessible plain-text link label, up to 100 characters. Required when its URL is set. Links open in a new tab so the customer's checkout stays available.",
-    },
-  ]),
+  {
+    name: "paytoTermsUrl",
+    label: `${DEFAULT_TERMS_LABEL} URL`,
+    type: "text",
+    default: "",
+    description:
+      "Public HTTPS URL for your own merchant PayTo terms. Required before launch unless confirmed in hosted checkout. Leave blank only while preparing UAT; configure per store scope. No API keys or HTML. Shown separately from the instructions tooltip when PayTo is enabled.",
+  },
+  {
+    name: "paytoTermsLabel",
+    label: `${DEFAULT_TERMS_LABEL} link text`,
+    type: "text",
+    default: DEFAULT_TERMS_LABEL,
+    description:
+      "Accessible plain-text terms link label, up to 100 characters. Required when its URL is set. Opens in a new tab so the customer's checkout stays available.",
+  },
   {
     name: "checkoutByline",
     label: "Checkout payment byline",

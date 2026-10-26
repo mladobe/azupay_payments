@@ -1,7 +1,7 @@
 import {
   DEFAULT_INSTRUCTIONS,
   DEFAULT_INSTRUCTIONS_LABEL,
-  educationLinks,
+  DEFAULT_TERMS_LABEL,
   helpUrl,
 } from "./checkout-guidance.js";
 import { DEFAULT_CHECKOUT_TITLE } from "./identity.js";
@@ -123,38 +123,32 @@ export function brandingSettings(config) {
     }
   }
   const links = [];
-  for (const link of educationLinks.filter((item) =>
-    enabledMethods.includes(item.method),
-  )) {
-    const value = text(
-      config[`${link.name}Url`],
-      link.url,
-      2048,
-      `${link.label} URL`,
-    );
-    if (!value) continue;
+  const termsUrl = enabledMethods.includes("payto")
+    ? text(config.paytoTermsUrl, "", 2048, "PayTo terms URL")
+    : "";
+  if (termsUrl) {
     let url;
     try {
-      url = helpUrl(value);
+      url = helpUrl(termsUrl);
     } catch (error) {
       requireValue(false, "INVALID_BRANDING", error.message);
     }
     const label = text(
-      config[`${link.name}Label`],
-      link.label,
+      config.paytoTermsLabel,
+      DEFAULT_TERMS_LABEL,
       100,
-      `${link.label} link text`,
+      "PayTo terms link text",
     );
     requireValue(
       label.length > 0,
       "INVALID_BRANDING",
-      "Enter link text for every configured help URL.",
+      "Enter link text for the PayTo terms URL.",
     );
     links.push({
-      method: link.method,
+      method: "payto",
       label,
       url,
-      kind: link.name === "paytoTerms" ? "terms" : "education",
+      kind: "terms",
     });
   }
   requireValue(

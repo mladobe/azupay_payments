@@ -1,41 +1,4 @@
-export const educationLinks = [
-  {
-    name: "payidEducation",
-    method: "payid",
-    label: "About paying with PayID",
-    url: "https://9191330.fs1.hubspotusercontent-na1.net/hubfs/9191330/HowTo1.jpg",
-  },
-  {
-    name: "payidInstructions",
-    method: "payid",
-    label: "PayID step-by-step instructions",
-    url: "https://9191330.fs1.hubspotusercontent-na1.net/hubfs/9191330/PayID%20Instructions%20FINAL.jpg",
-  },
-  {
-    name: "payidBenefits",
-    method: "payid",
-    label: "Benefits of PayID",
-    url: "https://9191330.fs1.hubspotusercontent-na1.net/hubfs/9191330/PayID%20Benefits%20FINAL.jpg",
-  },
-  {
-    name: "payidLearnMore",
-    method: "payid",
-    label: "Learn more about PayID",
-    url: "https://9191330.fs1.hubspotusercontent-na1.net/hubfs/9191330/PayID%20Learn%20More%20FINAL.jpg",
-  },
-  {
-    name: "paytoInstructions",
-    method: "payto",
-    label: "How to approve a PayTo agreement in your bank",
-    url: "https://info.azupay.com.au/payto-banking-instructions",
-  },
-  {
-    name: "paytoTerms",
-    method: "payto",
-    label: "PayTo terms and conditions",
-    url: "",
-  },
-];
+export const DEFAULT_TERMS_LABEL = "PayTo terms and conditions";
 
 export const paymentInstructions = {
   payid:

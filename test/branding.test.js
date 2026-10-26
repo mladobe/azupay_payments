@@ -6,7 +6,7 @@ import {
   checkoutGuidanceWarnings,
   DEFAULT_INSTRUCTIONS,
   DEFAULT_INSTRUCTIONS_LABEL,
-  educationLinks,
+  DEFAULT_TERMS_LABEL,
   helpUrl,
 } from "../src/shared/checkout-guidance.js";
 import { azupayPaymentSlot, setupAzupayBranding } from "../storefront/eds.js";
@@ -51,57 +51,81 @@ describe("public store-scoped checkout branding", () => {
         code: "INVALID_BRANDING",
       });
   });
-  it("filters education by enabled rail, accepts singleton settings and preserves merchant titles", () => {
+  it("shows terms only for PayTo, accepts singleton settings and preserves merchant titles", () => {
     for (const methods of ["payid", "payto", "both"]) {
       const result = brandingSettings({
         methods: [methods],
         checkoutTitle: "Merchant label",
+        paytoTermsUrl: "https://merchant.example/terms",
       });
       assert.equal(result.title, "Merchant label");
       assert.deepEqual(
         result.guidance.methods,
         methods === "both" ? ["payid", "payto"] : [methods],
       );
-      assert.ok(
-        result.guidance.links.every((link) =>
-          result.guidance.methods.includes(link.method),
-        ),
-      );
-      assert.equal(
-        result.guidance.links.some((link) => link.kind === "terms"),
-        false,
+      assert.deepEqual(
+        result.guidance.links,
+        methods === "payid"
+          ? []
+          : [
+              {
+                method: "payto",
+                kind: "terms",
+                label: DEFAULT_TERMS_LABEL,
+                url: "https://merchant.example/terms",
+              },
+            ],
       );
     }
   });
-  it("supports scoped custom education, hidden links, instructions off and merchant-specific terms", () => {
+  it("ignores all saved legacy link values, including invalid ones, without affecting tooltip or terms", () => {
+    const legacyValues = Object.fromEntries(
+      [
+        "payidEducation",
+        "payidInstructions",
+        "payidBenefits",
+        "payidLearnMore",
+        "paytoInstructions",
+      ].flatMap((name) => [
+        [`${name}Url`, "javascript:alert(1)"],
+        [`${name}Label`, 42],
+      ]),
+    );
+    const config = {
+      methods: "both",
+      checkoutInstructions: "Our current instructions.\nDo not pay twice.",
+      checkoutInstructionsLabel: "How do I pay?",
+      paytoTermsUrl: "https://merchant.example/terms",
+    };
+    assert.deepEqual(
+      brandingSettings({ ...config, ...legacyValues }),
+      brandingSettings(config),
+    );
+  });
+  it("supports scoped merchant terms independently of instructions and permits clearing the URL", () => {
     const result = brandingSettings({
       methods: "both",
       checkoutGuidanceEnabled: false,
-      payidEducationUrl: "https://merchant.example/help#payid",
-      payidEducationLabel: "How our bank payments work",
-      payidInstructionsUrl: "",
       paytoTermsUrl: "https://merchant.example/payto-terms",
       paytoTermsLabel: "Our PayTo terms",
     });
     assert.equal(result.guidance.showInstructions, false);
-    assert.ok(
-      result.guidance.links.some(
-        (link) =>
-          link.label === "How our bank payments work" &&
-          link.url.endsWith("#payid"),
-      ),
+    assert.deepEqual(result.guidance.links, [
+      {
+        method: "payto",
+        kind: "terms",
+        label: "Our PayTo terms",
+        url: "https://merchant.example/payto-terms",
+      },
+    ]);
+    assert.deepEqual(
+      brandingSettings({
+        methods: "payto",
+        paytoTermsUrl: "",
+        paytoTermsLabel: "",
+      }).guidance.links,
+      [],
     );
-    assert.ok(
-      !result.guidance.links.some(
-        (link) => link.label === "PayID step-by-step instructions",
-      ),
-    );
-    assert.deepEqual(result.guidance.links.at(-1), {
-      method: "payto",
-      kind: "terms",
-      label: "Our PayTo terms",
-      url: "https://merchant.example/payto-terms",
-    });
   });
   it("rejects unsafe links, invalid labels and instructions without fetching merchant URLs", () => {
     for (const url of [
@@ -111,18 +135,29 @@ describe("public store-scoped checkout branding", () => {
       "https://user:password@merchant.example/help",
     ]) {
       assert.throws(() => helpUrl(url));
-      assert.throws(() => brandingSettings({ payidEducationUrl: url }), {
-        code: "INVALID_BRANDING",
-      });
+      assert.throws(
+        () => brandingSettings({ methods: "payto", paytoTermsUrl: url }),
+        {
+          code: "INVALID_BRANDING",
+        },
+      );
     }
     for (const config of [
-      { payidEducationLabel: "" },
-      { payidEducationLabel: "x".repeat(101) },
+      { paytoTermsLabel: "" },
+      { paytoTermsLabel: "x".repeat(101) },
       { checkoutGuidanceEnabled: "false" },
     ])
-      assert.throws(() => brandingSettings(config), {
-        code: "INVALID_BRANDING",
-      });
+      assert.throws(
+        () =>
+          brandingSettings({
+            methods: "payto",
+            paytoTermsUrl: "https://merchant.example/terms",
+            ...config,
+          }),
+        {
+          code: "INVALID_BRANDING",
+        },
+      );
   });
   it("warns admins about missing PayTo terms and logo approval without inventing merchant terms", () => {
     assert.match(
@@ -164,14 +199,7 @@ describe("public store-scoped checkout branding", () => {
           label: DEFAULT_INSTRUCTIONS_LABEL,
           text: DEFAULT_INSTRUCTIONS,
         },
-        links: educationLinks
-          .filter((link) => link.url)
-          .map((link) => ({
-            method: link.method,
-            label: link.label,
-            url: new URL(link.url).href,
-            kind: "education",
-          })),
+        links: [],
       },
     });
     for (const [methods, expected] of [

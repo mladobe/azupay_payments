@@ -186,21 +186,22 @@ Azupay's hosted payment page. The content should tell customers to return to
 Commerce and select **Complete your order** after server verification; it must
 not imply that an agreement approval alone confirms settlement.
 
-The scoped 0.1.9 education URLs and labels are retained for compatibility with
-older storefront bundles:
+From 0.1.11, the five legacy education/approval URL and link-text pairs are
+removed from the shared schema and both configuration UIs. Use the combined
+instructions textarea instead. Existing saved values for those retired fields
+are ignored, including during public branding validation; no old education URLs
+are returned to storefronts. Tooltip text, titles, logo settings and payment
+processing settings are not reset.
 
-- PayID information, step-by-step instructions, benefits and further reading.
-- PayTo bank approval instructions.
-- Your merchant-specific PayTo terms URL and link text.
+Keep your merchant-specific **PayTo terms and conditions URL** and optional
+custom link text. The URL must be absolute HTTPS without credentials, up to
+2,048 characters (anchors are allowed); its label must be nonempty plain text
+up to 100 characters when a URL is provided. The link opens in a new tab without
+an opener or referrer and is returned only when PayTo is enabled.
 
-Defaults point to customer education resources linked by Azupay's
+Review your own tooltip wording against Azupay's
 [PayID UX guide](https://helpcentre.azupay.com.au/docs/payid-ux-guide) and
 [PayTo UX guide](https://helpcentre.azupay.com.au/docs/payto-ux-guide).
-Older 0.1.9 storefronts use these URLs; the 0.1.10 storefront no longer displays
-education links. Replace a legacy URL/label with your own accessible help content,
-or clear a URL to hide that legacy link. URLs must be absolute HTTPS without credentials (anchors are allowed);
-labels must be nonempty plain text up to 100 characters. Links open in a new tab
-without an opener or referrer. Only links for enabled methods are returned.
 Changes apply after refreshing checkout; API credentials never enter the links.
 
 The existing instructions toggle is reused, not reset. With an older branding

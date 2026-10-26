@@ -42,6 +42,31 @@ async function moduleFromBuild(options) {
 }
 
 describe("V2 admin menu and payment identity", () => {
+  it("removes all ten legacy guidance fields from the shared admin schema, keeping tooltip and terms", () => {
+    const names = configSchema.map((field) => field.name);
+    for (const prefix of [
+      "payidEducation",
+      "payidInstructions",
+      "payidBenefits",
+      "payidLearnMore",
+      "paytoInstructions",
+    ]) {
+      assert.ok(!names.includes(`${prefix}Url`));
+      assert.ok(!names.includes(`${prefix}Label`));
+    }
+    for (const name of [
+      "checkoutGuidanceEnabled",
+      "checkoutInstructions",
+      "checkoutInstructionsLabel",
+      "paytoTermsUrl",
+      "paytoTermsLabel",
+    ])
+      assert.equal(names.filter((value) => value === name).length, 1);
+    assert.equal(
+      configSchema.find((field) => field.name === "paytoTermsUrl").default,
+      "",
+    );
+  });
   it("registers only V2 with a dedicated Sales menu ACL and least sandbox privilege", async () => {
     assert.equal(config.metadata.id, APP_ID);
     assert.equal(APP_ID, "azupay-pay-by-bank");

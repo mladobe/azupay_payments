@@ -229,6 +229,7 @@ async function earlierRelease(options, version) {
     "0.1.7",
     "0.1.8",
     "0.1.9",
+    "0.1.10",
   ].includes(version)
     ? installed
     : installed.replace(
@@ -254,6 +255,7 @@ for (const version of [
   "0.1.7",
   "0.1.8",
   "0.1.9",
+  "0.1.10",
 ]) {
   it(`explicitly upgrades ${version} without rewriting merchant checkout`, async (t) => {
     const options = await fixture(t);
@@ -297,7 +299,7 @@ for (const version of [
   });
 }
 
-for (const version of ["0.1.5", "0.1.6", "0.1.7", "0.1.8", "0.1.9"]) {
+for (const version of ["0.1.5", "0.1.6", "0.1.7", "0.1.8", "0.1.9", "0.1.10"]) {
   it(`upgrades unchanged ${version} assets without adding a second button registration`, async (t) => {
     const options = await fixture(t);
     await installEds(options);
@@ -325,7 +327,7 @@ for (const version of ["0.1.5", "0.1.6", "0.1.7", "0.1.8", "0.1.9"]) {
     assert.deepEqual(after, before);
     assert.equal(
       JSON.parse(await readFile(manifestPath, "utf8")).version,
-      "0.1.10",
+      "0.1.11",
     );
     assert.equal((await installEds(options)).status, "unchanged");
   });
