@@ -1,4 +1,9 @@
-import { educationLinks, helpUrl } from "./checkout-guidance.js";
+import {
+  DEFAULT_INSTRUCTIONS,
+  DEFAULT_INSTRUCTIONS_LABEL,
+  educationLinks,
+  helpUrl,
+} from "./checkout-guidance.js";
 import { DEFAULT_CHECKOUT_TITLE } from "./identity.js";
 import { requireValue } from "./payment.js";
 
@@ -158,6 +163,23 @@ export function brandingSettings(config) {
     "INVALID_BRANDING",
     "Choose a valid payment instructions setting.",
   );
+  const instructions = text(
+    config.checkoutInstructions,
+    DEFAULT_INSTRUCTIONS,
+    4000,
+    "Payment instructions",
+  );
+  const instructionsLabel = text(
+    config.checkoutInstructionsLabel,
+    DEFAULT_INSTRUCTIONS_LABEL,
+    100,
+    "Payment instructions label",
+  );
+  requireValue(
+    !instructions || instructionsLabel.length > 0,
+    "INVALID_BRANDING",
+    "Enter a label for the payment instructions.",
+  );
   return {
     title,
     byline,
@@ -165,6 +187,7 @@ export function brandingSettings(config) {
     guidance: {
       methods: enabledMethods,
       showInstructions: config.checkoutGuidanceEnabled ?? true,
+      tooltip: { label: instructionsLabel, text: instructions },
       links,
     },
   };

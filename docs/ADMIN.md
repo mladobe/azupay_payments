@@ -160,8 +160,34 @@ checkouts. No manual edits to the merchant's generated browser bundle are needed
 
 ## Customer education and PayTo terms
 
-Configuration includes rail-specific education URLs and link text, inherited
-through the same store scopes as other settings:
+From 0.1.10, Commerce checkout shows one compact instruction popover beneath the
+logos instead of long explanatory paragraphs and the education-link list.
+In **Sales > Azupay Real Time Payments > Configuration**:
+
+1. Select the store scope and unlock **Payment instructions**.
+2. Enter your instructions in the textarea (up to 4,000 characters). Line breaks
+   and numbered lines are preserved; HTML and Markdown are displayed as literal
+   text, not rendered. Describe only the payment options you have enabled.
+3. Optionally change **Payment instructions tooltip label** (up to 100
+   characters), default **How do I pay by bank?**.
+4. Save, then refresh checkout. Clear the instruction text or turn off
+   **Show payment instructions tooltip** to hide it.
+
+The popover opens on mouse hover, keyboard focus or tap. Click/tap again or
+press Escape to close it; leaving the popover or moving focus outside also
+closes it when appropriate. It uses a native disclosure, not a modal, and does
+not trap focus. Long content can be scrolled. Native App Management shares the
+same text storage/schema, but its generic text control is host-managed; use the
+Sales menu textarea to edit multiple lines.
+
+Merchant PayTo terms remain a separate visible link, even when instructions
+are hidden. The tooltip is only on Commerce checkout: it does **not** customize
+Azupay's hosted payment page. The content should tell customers to return to
+Commerce and select **Complete your order** after server verification; it must
+not imply that an agreement approval alone confirms settlement.
+
+The scoped 0.1.9 education URLs and labels are retained for compatibility with
+older storefront bundles:
 
 - PayID information, step-by-step instructions, benefits and further reading.
 - PayTo bank approval instructions.
@@ -170,17 +196,18 @@ through the same store scopes as other settings:
 Defaults point to customer education resources linked by Azupay's
 [PayID UX guide](https://helpcentre.azupay.com.au/docs/payid-ux-guide) and
 [PayTo UX guide](https://helpcentre.azupay.com.au/docs/payto-ux-guide).
-Replace a URL/label with your own accessible help content. Clear a URL to hide
-that link. URLs must be absolute HTTPS without credentials (anchors are allowed);
+Older 0.1.9 storefronts use these URLs; the 0.1.10 storefront no longer displays
+education links. Replace a legacy URL/label with your own accessible help content,
+or clear a URL to hide that legacy link. URLs must be absolute HTTPS without credentials (anchors are allowed);
 labels must be nonempty plain text up to 100 characters. Links open in a new tab
 without an opener or referrer. Only links for enabled methods are returned.
 Changes apply after refreshing checkout; API credentials never enter the links.
 
-**Show PayID / PayTo payment instructions** controls the explanatory paragraphs
-independently of the links. PayID wording distinguishes a transfer to the
-recipient PayID from the customer's own PayID. PayTo wording refers to a
-**PayTo agreement**, bank-app/internet-banking approval and the separate need to
-verify settlement. Both appear when both methods are enabled.
+The existing instructions toggle is reused, not reset. With an older branding
+backend, a new storefront puts the legacy enabled-rail instructions inside the
+combined popover. Custom textarea content requires the new backend/schema and
+the new browser bundle. A new backend does not replace an old storefront's
+expanded presentation until that storefront bundle is upgraded.
 
 Before launch, supply your merchant PayTo terms URL, or arrange with Azupay to
 host those terms and confirm **Merchant PayTo terms are available in hosted

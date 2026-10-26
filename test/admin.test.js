@@ -164,7 +164,7 @@ describe("admin operations page", () => {
     assert.match(html, /Apps &gt; App Management/);
     assert.match(html, /not a live payment dashboard/);
     assert.match(html, /Online Commerce refunds are not supported/);
-    assert.match(html, /Customize education link URLs and text/);
+    assert.match(html, /payment instructions tooltip label/);
     assert.match(
       html,
       /https:\/\/helpcentre\.azupay\.com\.au\/docs\/payid-ux-guide/,

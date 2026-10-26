@@ -1,4 +1,5 @@
 import {
+  DEFAULT_INSTRUCTIONS_LABEL,
   helpUrl,
   paymentInstructions,
 } from "../src/shared/checkout-guidance.js";
@@ -50,6 +51,17 @@ function validateBranding(value) {
       guidance.links.length > 6
     )
       throw new Error("Invalid payment guidance response.");
+    if (guidance.tooltip !== undefined) {
+      const tooltip = guidance.tooltip;
+      if (
+        typeof tooltip?.text !== "string" ||
+        tooltip.text.length > 4000 ||
+        typeof tooltip.label !== "string" ||
+        tooltip.label.length > 100 ||
+        (tooltip.text.trim() && !tooltip.label.trim())
+      )
+        throw new Error("Invalid payment instructions tooltip.");
+    }
     for (const link of guidance.links) {
       if (
         !guidance.methods.includes(link.method) ||
@@ -203,6 +215,92 @@ async function getActionBase(graphql, cartId) {
   return paymentActionBase(response.data.cart.available_payment_methods);
 }
 
+let instructionSequence = 0;
+
+function instructionPopover({ label, text }) {
+  const details = document.createElement("details");
+  details.className = "azupay-payment-instructions";
+  Object.assign(details.style, {
+    position: "relative",
+    maxWidth: "100%",
+    margin: "16px 0",
+  });
+  const trigger = document.createElement("summary");
+  trigger.textContent = label;
+  Object.assign(trigger.style, {
+    display: "block",
+    width: "fit-content",
+    maxWidth: "100%",
+    color: "var(--link-color, #005fcc)",
+    cursor: "pointer",
+    textDecoration: "underline dotted",
+    textUnderlineOffset: "4px",
+    overflowWrap: "anywhere",
+  });
+  const panel = document.createElement("div");
+  panel.id = `azupay-instructions-${++instructionSequence}`;
+  panel.setAttribute("role", "region");
+  panel.setAttribute("aria-label", label);
+  panel.tabIndex = 0;
+  trigger.setAttribute("aria-controls", panel.id);
+  Object.assign(panel.style, {
+    position: "absolute",
+    top: "100%",
+    left: "0",
+    width: "min(36rem, 100%)",
+    maxHeight: "min(60vh, 28rem)",
+    boxSizing: "border-box",
+    overflow: "auto",
+    overflowWrap: "anywhere",
+    padding: "20px",
+    border: "1px solid #ddd",
+    borderRadius: "12px",
+    background: "#fff",
+    color: "#242424",
+    boxShadow: "0 4px 20px #0003",
+    zIndex: "10",
+  });
+  const heading = document.createElement("strong");
+  heading.textContent = label;
+  const content = document.createElement("p");
+  content.textContent = text;
+  content.style.whiteSpace = "pre-wrap";
+  panel.append(heading, content);
+  details.append(trigger, panel);
+  let pinned = false;
+  function close() {
+    pinned = false;
+    details.open = false;
+  }
+  trigger.addEventListener("click", (event) => {
+    event.preventDefault();
+    trigger.focus();
+    pinned = !pinned;
+    details.open = pinned;
+  });
+  details.addEventListener("pointerenter", (event) => {
+    if (event.pointerType === "mouse") details.open = true;
+  });
+  details.addEventListener("pointerleave", () => {
+    if (!details.contains(document.activeElement)) close();
+  });
+  details.addEventListener("focusin", () => {
+    details.open = true;
+  });
+  details.addEventListener("focusout", (event) => {
+    if (!details.contains(event.relatedTarget)) close();
+  });
+  details.addEventListener("keydown", (event) => {
+    if (event.key === "Escape" && details.open) {
+      event.preventDefault();
+      event.stopPropagation();
+      trigger.focus();
+      close();
+    }
+  });
+  return details;
+}
+
 export const azupayPaymentSlot = {
   render(ctx) {
     const container = document.createElement("div");
@@ -260,18 +358,20 @@ export const azupayPaymentSlot = {
       container.append(logos);
     }
     const guidance = branding?.guidance;
-    if (guidance?.showInstructions) {
-      for (const method of guidance.methods) {
-        const instruction = document.createElement("p");
-        instruction.textContent = paymentInstructions[method];
-        container.append(instruction);
-      }
-    }
-    if (guidance?.links.length) {
+    const tooltip = guidance?.tooltip ?? {
+      label: DEFAULT_INSTRUCTIONS_LABEL,
+      text: guidance?.methods
+        .map((method) => paymentInstructions[method])
+        .join("\n\n"),
+    };
+    if (guidance?.showInstructions && tooltip.text?.trim())
+      container.append(instructionPopover(tooltip));
+    const terms = guidance?.links.filter((link) => link.kind === "terms");
+    if (terms?.length) {
       const links = document.createElement("ul");
       links.className = "azupay-payment-help";
-      links.setAttribute("aria-label", "Payment education and terms");
-      for (const link of guidance.links) {
+      links.setAttribute("aria-label", "Payment terms");
+      for (const link of terms) {
         const item = document.createElement("li");
         const anchor = document.createElement("a");
         anchor.href = link.url;

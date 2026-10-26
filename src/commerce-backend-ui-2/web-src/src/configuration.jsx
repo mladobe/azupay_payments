@@ -13,6 +13,8 @@ import {
 const limits = {
   checkoutTitle: 100,
   checkoutByline: 250,
+  checkoutInstructionsLabel: 100,
+  checkoutInstructions: 4000,
   ...Object.fromEntries(
     educationLinks.flatMap((link) => [
       [`${link.name}Url`, 2048],
@@ -61,6 +63,14 @@ function ConfigurationField({ field, draft, disabled, update }) {
             </option>
           ))}
         </select>
+      ) : field.name === "checkoutInstructions" ? (
+        <textarea
+          {...common}
+          rows={9}
+          maxLength={limits.checkoutInstructions}
+          value={value}
+          onChange={(event) => update(field.name, event.target.value)}
+        />
       ) : (
         <input
           {...common}
@@ -217,6 +227,11 @@ export function Configuration({ client }) {
     event.preventDefault();
     if (!event.currentTarget.closest("form").reportValidity()) return;
     try {
+      if (
+        String(effective.checkoutInstructions ?? "").trim() &&
+        !String(effective.checkoutInstructionsLabel ?? "").trim()
+      )
+        throw new Error("Enter a label for the payment instructions.");
       for (const link of educationLinks) {
         const value = String(effective[`${link.name}Url`] ?? "").trim();
         if (!value) continue;

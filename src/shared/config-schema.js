@@ -1,4 +1,8 @@
-import { educationLinks } from "./checkout-guidance.js";
+import {
+  DEFAULT_INSTRUCTIONS,
+  DEFAULT_INSTRUCTIONS_LABEL,
+  educationLinks,
+} from "./checkout-guidance.js";
 import { DEFAULT_CHECKOUT_TITLE } from "./identity.js";
 
 export const configSchema = [
@@ -84,11 +88,27 @@ export const configSchema = [
   },
   {
     name: "checkoutGuidanceEnabled",
-    label: "Show PayID / PayTo payment instructions",
+    label: "Show payment instructions tooltip",
     type: "boolean",
     default: true,
     description:
-      "Shows instructions only for your enabled methods. PayID uses the recipient PayID displayed in hosted checkout. PayTo requires approval of a PayTo agreement in the customer's bank. Education and terms links below are separate from the instructions.",
+      "Shows one expandable instruction tooltip below the payment logos on Commerce checkout. Opens on hover, keyboard focus or tap. Merchant PayTo terms remain separate. This does not change Azupay's hosted payment page.",
+  },
+  {
+    name: "checkoutInstructionsLabel",
+    label: "Payment instructions tooltip label",
+    type: "text",
+    default: DEFAULT_INSTRUCTIONS_LABEL,
+    description:
+      "Short question shown as the tooltip trigger and heading. Enter plain text up to 100 characters. Required when instruction text is provided.",
+  },
+  {
+    name: "checkoutInstructions",
+    label: "Payment instructions",
+    type: "text",
+    default: DEFAULT_INSTRUCTIONS,
+    description:
+      "Plain-text tooltip content, up to 4,000 characters. Use the textarea in Sales > Azupay Real Time Payments; line breaks and numbered lines are preserved. No HTML or Markdown formatting. Describe only your enabled payment options. Leave blank to hide the tooltip. After payment is verified, customers must still select Complete your order in Commerce. Refresh checkout after saving.",
   },
   {
     name: "paytoTermsInHostedCheckout",
@@ -107,7 +127,7 @@ export const configSchema = [
       description:
         link.name === "paytoTerms"
           ? "Public HTTPS URL for your own merchant PayTo terms. Required before launch unless confirmed in hosted checkout. Leave blank only while preparing UAT; configure per store scope. No API keys or HTML."
-          : "Customer-facing HTTPS education link. Replace with your own help page if preferred, or clear to hide this link. Only shown when its payment method is enabled. No API keys or HTML. Refresh checkout after saving.",
+          : "Legacy customer-facing HTTPS education link for 0.1.9 storefronts. Current storefronts use the combined instructions tooltip instead; these values are retained for older clients. Replace with your own help page or clear to hide the legacy link. No API keys or HTML.",
     },
     {
       name: `${link.name}Label`,

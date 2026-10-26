@@ -4,12 +4,53 @@ import { build } from "esbuild";
 import { brandingSettings } from "../src/shared/branding.js";
 import {
   checkoutGuidanceWarnings,
+  DEFAULT_INSTRUCTIONS,
+  DEFAULT_INSTRUCTIONS_LABEL,
   educationLinks,
   helpUrl,
 } from "../src/shared/checkout-guidance.js";
 import { azupayPaymentSlot, setupAzupayBranding } from "../storefront/eds.js";
 
 describe("public store-scoped checkout branding", () => {
+  it("preserves multiline plain-text tooltip content, supports hiding and enforces exact limits", () => {
+    const text =
+      "1. Follow our bank instructions.\n\n2. <b>Do not pay twice.</b>";
+    const result = brandingSettings({
+      checkoutInstructions: text,
+      checkoutInstructionsLabel: "How do I pay?",
+    });
+    assert.deepEqual(result.guidance.tooltip, {
+      label: "How do I pay?",
+      text,
+    });
+    assert.deepEqual(
+      brandingSettings({
+        checkoutInstructions: "",
+        checkoutInstructionsLabel: "",
+      }).guidance.tooltip,
+      { label: "", text: "" },
+    );
+    assert.equal(
+      brandingSettings({ checkoutInstructions: "x".repeat(4000) }).guidance
+        .tooltip.text.length,
+      4000,
+    );
+    assert.equal(
+      brandingSettings({ checkoutInstructionsLabel: "x".repeat(100) }).guidance
+        .tooltip.label.length,
+      100,
+    );
+    for (const config of [
+      { checkoutInstructions: "x".repeat(4001) },
+      { checkoutInstructions: 42 },
+      { checkoutInstructionsLabel: "x".repeat(101) },
+      { checkoutInstructionsLabel: "" },
+      { checkoutInstructionsLabel: " " },
+    ])
+      assert.throws(() => brandingSettings(config), {
+        code: "INVALID_BRANDING",
+      });
+  });
   it("filters education by enabled rail, accepts singleton settings and preserves merchant titles", () => {
     for (const methods of ["payid", "payto", "both"]) {
       const result = brandingSettings({
@@ -119,6 +160,10 @@ describe("public store-scoped checkout branding", () => {
       guidance: {
         methods: ["payid", "payto"],
         showInstructions: true,
+        tooltip: {
+          label: DEFAULT_INSTRUCTIONS_LABEL,
+          text: DEFAULT_INSTRUCTIONS,
+        },
         links: educationLinks
           .filter((link) => link.url)
           .map((link) => ({
@@ -270,6 +315,170 @@ function transportFixture({
 }
 
 describe("documented GraphQL branding hook", () => {
+  it("rejects malformed tooltip payloads without disabling checkout", async (t) => {
+    const logs = [];
+    t.mock.method(console, "error", (code) => logs.push(code));
+    for (const tooltip of [
+      null,
+      { label: "", text: "Instructions" },
+      { label: "x".repeat(101), text: "Instructions" },
+      { label: "Help", text: "x".repeat(4001) },
+      { label: "Help", text: 42 },
+    ]) {
+      const f = transportFixture({
+        guidance: {
+          methods: ["payid"],
+          showInstructions: true,
+          links: [],
+          tooltip,
+        },
+      });
+      assert.deepEqual(await f.run(), f.response);
+    }
+    assert.equal(logs.length, 5);
+  });
+  function mockRender(t, cartId) {
+    const doc = {
+      activeElement: null,
+      createElement(tagName) {
+        return {
+          tagName,
+          style: {},
+          dataset: {},
+          attributes: {},
+          events: {},
+          open: false,
+          children: [],
+          append(...children) {
+            this.children.push(...children);
+          },
+          setAttribute(name, value) {
+            this.attributes[name] = value;
+          },
+          addEventListener(name, handler) {
+            this.events[name] = handler;
+          },
+          focus() {
+            doc.activeElement = this;
+          },
+          contains(node) {
+            return (
+              node === this ||
+              this.children.some((child) => child.contains(node))
+            );
+          },
+        };
+      },
+    };
+    for (const [name, value] of Object.entries({
+      document: doc,
+      sessionStorage: { getItem: () => null },
+    })) {
+      const original = Object.getOwnPropertyDescriptor(globalThis, name);
+      Object.defineProperty(globalThis, name, { configurable: true, value });
+      t.after(() => {
+        if (original) Object.defineProperty(globalThis, name, original);
+        else delete globalThis[name];
+      });
+    }
+    let rendered;
+    azupayPaymentSlot.render({
+      cartId,
+      replaceHTML: (node) => {
+        rendered = node;
+      },
+    });
+    return { rendered, doc };
+  }
+  it("renders one safe multiline disclosure and keeps merchant terms outside it", async (t) => {
+    const guidance = brandingSettings({
+      methods: "both",
+      checkoutInstructions: "1. First step\n\n2. <img src=x onerror=alert(1)>",
+      paytoTermsUrl: "https://merchant.example/terms",
+    }).guidance;
+    const f = transportFixture({ guidance, cartId: "tooltip-custom" });
+    await f.run();
+    const { rendered, doc } = mockRender(t, "tooltip-custom");
+    const details = rendered.children.find(
+      (node) => node.tagName === "details",
+    );
+    const [trigger, panel] = details.children;
+    assert.equal(trigger.textContent, DEFAULT_INSTRUCTIONS_LABEL);
+    assert.equal(trigger.attributes["aria-controls"], panel.id);
+    assert.equal(panel.attributes.role, "region");
+    assert.equal(panel.children[1].textContent, guidance.tooltip.text);
+    assert.equal(panel.children[1].style.whiteSpace, "pre-wrap");
+    assert.equal(panel.children[1].children.length, 0);
+    const links = rendered.children.find((node) => node.tagName === "ul");
+    assert.equal(links.children.length, 1);
+    assert.equal(
+      links.children[0].children[0].href,
+      "https://merchant.example/terms",
+    );
+    assert.equal(links.children[0].children[0].rel, "noopener noreferrer");
+    assert.equal(details.open, false);
+    details.events.pointerenter({ pointerType: "touch" });
+    assert.equal(details.open, false);
+    details.events.pointerenter({ pointerType: "mouse" });
+    assert.equal(details.open, true);
+    details.events.pointerleave();
+    assert.equal(details.open, false);
+    details.events.focusin();
+    trigger.focus();
+    details.events.pointerleave();
+    assert.equal(details.open, true);
+    const event = { preventDefault() {}, stopPropagation() {} };
+    trigger.events.click(event);
+    assert.equal(details.open, true);
+    trigger.events.click(event);
+    assert.equal(details.open, false);
+    trigger.events.click(event);
+    details.events.keydown({ ...event, key: "Escape" });
+    assert.equal(details.open, false);
+    assert.equal(doc.activeElement, trigger);
+    details.events.focusin();
+    details.events.focusout({ relatedTarget: null });
+    assert.equal(details.open, false);
+  });
+  it("uses legacy rail-specific guidance inside one disclosure when an older backend has no tooltip", async (t) => {
+    const f = transportFixture({
+      cartId: "tooltip-legacy",
+      guidance: { methods: ["payid"], showInstructions: true, links: [] },
+    });
+    await f.run();
+    const { rendered } = mockRender(t, "tooltip-legacy");
+    const details = rendered.children.find(
+      (node) => node.tagName === "details",
+    );
+    assert.match(
+      details.children[1].children[1].textContent,
+      /recipient PayID/,
+    );
+    assert.doesNotMatch(details.children[1].children[1].textContent, /PayTo/);
+  });
+  for (const settings of [
+    { checkoutGuidanceEnabled: false },
+    { checkoutInstructions: "" },
+  ]) {
+    it(`hides the tooltip without hiding terms: ${JSON.stringify(settings)}`, async (t) => {
+      const cartId = `hidden-tooltip-${JSON.stringify(settings)}`;
+      const f = transportFixture({
+        cartId,
+        guidance: brandingSettings({
+          methods: "payto",
+          paytoTermsUrl: "https://merchant.example/terms",
+          ...settings,
+        }).guidance,
+      });
+      await f.run();
+      const { rendered } = mockRender(t, cartId);
+      assert.ok(!rendered.children.some((node) => node.tagName === "details"));
+      assert.equal(
+        rendered.children.find((node) => node.tagName === "ul").children.length,
+        1,
+      );
+    });
+  }
   it("preserves Commerce payment ordering and other method settings exactly", async () => {
     const f = transportFixture({
       guidance: brandingSettings({ methods: "both" }).guidance,

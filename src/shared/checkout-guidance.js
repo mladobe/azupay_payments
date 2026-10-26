@@ -44,6 +44,10 @@ export const paymentInstructions = {
     "PayTo: connect your bank account in Azupay checkout, then open your banking app or internet banking to review and approve the PayTo agreement. Agreement approval alone does not confirm that payment has been received.",
 };
 
+export const DEFAULT_INSTRUCTIONS_LABEL = "How do I pay by bank?";
+export const DEFAULT_INSTRUCTIONS =
+  "1. Continue to Azupay and follow the instructions for an available bank payment option.\n2. In your banking app or internet banking, check the business name, exact amount and payment details before confirming.\n3. Return to Commerce checkout. After payment is verified, select Complete your order.\n\nIf you use PayTo, approving the agreement alone does not confirm payment. If a payment is delayed, check with your bank and do not pay again.";
+
 export function helpUrl(value) {
   const url = new URL(value);
   if (

@@ -74,6 +74,7 @@ body {
 
 .azupay-admin button,
 .azupay-admin input,
+.azupay-admin textarea,
 .azupay-admin select {
   font: inherit;
   max-width: 100%;
@@ -106,10 +107,16 @@ body {
 }
 
 .configuration-field > input:not([type="checkbox"]),
+.configuration-field > textarea,
 .configuration-field > select {
   box-sizing: border-box;
   width: 100%;
   padding: 8px;
+}
+
+.configuration-field > textarea {
+  resize: vertical;
+  min-height: 160px;
 }
 
 .field-help,

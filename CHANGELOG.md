@@ -4,6 +4,19 @@ Changes are grouped by implementation version. These entries describe local
 development history, not previously published GitHub releases or certification.
 The first public release is pending ownership/licence approval and acceptance.
 
+## 0.1.10
+
+- Replace expanded checkout instructions and external education links with one
+  combined, scoped instruction popover, using a configurable label and plain-text
+  textarea. Preserve line breaks and numbered lines without rendering HTML.
+- Open on hover, keyboard focus or tap; support Escape and focus dismissal
+  without trapping checkout focus. Keep merchant PayTo terms separately visible
+  when instructions are hidden.
+- Retain legacy education settings and accept older branding responses. Hosted
+  Azupay pages, payment processing and Commerce payment ordering are unchanged.
+- Reviewed installer upgrades through 0.1.9; the updated schema/backend and
+  storefront bundle are both required for custom tooltip content.
+
 ## 0.1.9
 
 - Shopper default title is Pay by Bank; the app/menu name and merchant-customized

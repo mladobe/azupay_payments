@@ -108,9 +108,10 @@ export function AdminPage({ connected, client = null, connectionError = "" }) {
               Set your checkout title, byline and permitted hosted logo images.
             </li>
             <li>
-              Customize education link URLs and text for each payment rail.
-              Clear a URL to hide that link. Provide your merchant PayTo terms
-              URL or confirm those terms are configured in hosted checkout.
+              Set the payment instructions tooltip label and its multiline
+              plain-text content. Clear the instruction text to hide it. Provide
+              your merchant PayTo terms URL or confirm those terms are
+              configured in hosted checkout.
             </li>
             <li>
               Enable automatic invoicing only after verifying the reconciliation
