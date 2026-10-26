@@ -158,6 +158,108 @@ Commerce method record. Do not assume a redeploy reruns installation. The
 storefront branding hook applies the effective scoped title on supported EDS
 checkouts. No manual edits to the merchant's generated browser bundle are needed.
 
+## Illustrated configuration walkthrough
+
+These annotated crops come from the supplied Azupay settings screenshot.
+Numbers identify the controls described below; the original screenshot was
+left unchanged. Select an image to view it at full size.
+
+**The screenshot is an example, not recommended launch defaults or proof of a
+successful save.** It shows a custom title/byline, a 31-minute expiry, modal
+checkout, enabled invoicing and an unsaved draft. Start with UAT, a 30-minute
+expiry and full redirect, and enable invoicing only after testing reconciliation.
+Set logo permission only when your own agreement grants it. Choose values for
+your provisioned account and tested storefront rather than copying the image.
+
+### 1. Select scope and payment settings
+
+![Annotated scope and payment settings: 1 active scope, 2 environment, 3 payment methods, 4 checkout experience and title.](images/admin-scope-payments.png)
+
+1. **Active scope:** choose Global, Website, Store or Store View as appropriate.
+   Clear **Use inherited / default value** for each override; inherited controls
+   are disabled. Save or discard the current draft before switching scope.
+2. **Azupay environment:** use Staging / UAT while testing. Production also needs
+   separately provisioned credentials, merchant approval and the deployment
+   production gate; choosing it here alone cannot enable live payments.
+3. **Payment methods:** select the provisioned PayID, PayTo or combined profile.
+   This selects credentials; it does not activate a product on your Azupay account.
+4. **Checkout experience and title:** start with full redirect, or test modal
+   checkout before enabling it. Set your shopper-facing title; the app/menu name
+   remains Azupay Real Time Payments.
+
+### 2. Set the instructions tooltip and legal terms
+
+![Annotated instructions and terms: 1 tooltip toggle and label, 2 multiline instruction textarea, 3 hosted merchant terms confirmation, 4 PayTo terms URL and label.](images/admin-tooltip-terms.png)
+
+1. **Show payment instructions tooltip / label:** enable the compact popover
+   and set its question, up to 100 characters. The default is
+   **How do I pay by bank?**.
+2. **Payment instructions:** unlock the textarea and enter up to 4,000 plain-text
+   characters. Use line breaks or numbered lines for steps. Blank text hides the
+   popover. No HTML or Markdown is rendered; no legacy external help URLs are
+   needed. Explain only the payment options you offer.
+3. **Merchant PayTo terms are available in hosted checkout:** confirm only when
+   Azupay has actually configured your merchant terms there. This is not a
+   shopper's payment agreement or bank authorisation, and the tooltip is not a
+   replacement for legal acceptance.
+4. **PayTo terms and conditions URL / link text:** provide your own public HTTPS
+   terms URL, up to 2,048 characters, and a nonempty label up to 100 characters.
+   When PayTo is enabled, that link appears outside the tooltip and remains
+   available even if instructions are hidden. The example URL is blank, which
+   must be addressed before launch unless hosted terms are confirmed.
+
+For a simple multiline structure, adapt this original example to your enabled
+payment options and hosted flow:
+
+```text
+1. Continue to Azupay and follow the bank payment instructions.
+2. Check the business name, amount and payment details in your bank.
+3. Return to Commerce checkout. Once payment is verified, select Complete your order.
+
+If your bank delays the payment, check with your bank and do not pay again.
+```
+
+The popover is on Commerce checkout, not Azupay's hosted page. Check
+[customer education and PayTo terms](#customer-education-and-payto-terms) for the
+limits and remaining hosted responsibilities.
+
+### 3. Configure the byline and logos
+
+![Annotated branding settings: 1 byline and logo mode, 2 official-mark permission, 3 hosted custom image URL, 4 accessible image description.](images/admin-branding-images.png)
+
+1. **Checkout payment byline / Checkout logos:** enter up to 250 characters of
+   byline text or leave it blank. Choose official marks, custom hosted images
+   or none.
+2. **Permission to use official PayID / PayTo logos:** check only with the
+   required rights. The selected payment methods determine which official
+   marks load; public portal access is not permission.
+3. **Custom checkout image URL:** when using Custom hosted images, upload the
+   approved image to your own media library and paste its HTTPS image URL.
+   Allow that host in your storefront's `img-src` CSP. There is no direct upload
+   in this form.
+4. **Custom checkout image description:** provide accessible plain text for each
+   configured image. Repeat the URL/description pair for up to three images.
+   Checkout constrains images to 100 x 48 CSS-pixel boxes and preserves their
+   proportions.
+
+### 4. Save, read back and test
+
+![Annotated save controls: 1 Save configuration button, 2 the unsaved-changes warning shown before saving.](images/admin-save.png)
+
+1. **Save configuration:** save the changed fields and wait for a confirmed
+   saved message/readback. Restore inheritance by checking **Use inherited /
+   default value** and saving. Discard changes abandons the current draft.
+2. **Unsaved changes:** the screenshot shows this warning, not a completed save.
+   Save or discard before changing scope or reloading. Switching Documentation
+   tabs retains the draft. If a save cannot be confirmed, reload authoritative
+   values before editing again.
+
+Refresh storefront checkout and check the effective store view. Verify the
+tooltip with mouse hover, keyboard focus, Enter/Space and Escape; test tapping on
+a real mobile device too. Confirm that only the tooltip is dismissed and that
+the separate terms link still works. Complete the
+[UAT checklist](OPERATIONS.md#uat-acceptance-checklist) before enabling production.
+
 ## Customer education and PayTo terms
 
 From 0.1.10, Commerce checkout shows one compact instruction popover beneath the

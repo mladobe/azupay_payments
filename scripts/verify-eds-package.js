@@ -11,6 +11,12 @@ const { version, license } = JSON.parse(
   await readFile(new URL("package.json", root)),
 );
 const archive = new URL(`dist/azupay-commerce-eds-${version}.tgz`, root);
+const documentationImages = [
+  "admin-scope-payments.png",
+  "admin-tooltip-terms.png",
+  "admin-branding-images.png",
+  "admin-save.png",
+];
 const entries = execFileSync("tar", ["-tzf", archive.pathname], {
   encoding: "utf8",
 })
@@ -36,6 +42,7 @@ assert.deepEqual(
     "package/bin/install.js",
     "package/package.json",
     "package/payload/client.js",
+    ...documentationImages.map((name) => `package/images/${name}`),
     ...(license && license !== "UNLICENSED" ? ["package/LICENSE"] : []),
   ].sort(),
   "Only approved code/documentation may be distributed",
@@ -47,6 +54,17 @@ try {
     await readFile(join(directory, "package/ACORN-LICENSE.txt"), "utf8"),
     /MIT License/,
   );
+  for (const name of documentationImages) {
+    const image = await readFile(join(directory, "package/images", name));
+    assert.deepEqual(
+      image,
+      await readFile(new URL(`docs/images/${name}`, root)),
+      `Packaged screenshot must match the approved source: ${name}`,
+    );
+    assert.equal(image.subarray(0, 8).toString("hex"), "89504e470d0a1a0a");
+    assert.equal(image.readUInt32BE(16), 880);
+    assert.ok(image.readUInt32BE(20) > 0);
+  }
   const help = execFileSync(
     process.execPath,
     [join(directory, "package/bin/install.js"), "--help"],

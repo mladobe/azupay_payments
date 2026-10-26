@@ -271,6 +271,10 @@ test bank credentials or send real funds to UAT.
 | Alarm first and subsequent runs | Visible successful activations and failure alerts |
 | Multi-store configuration | Correct store scope and explicit OOPE store registration |
 | Doc/tooltips | Admin can follow profile, UAT and production guidance |
+| Current admin configuration | Retired education/approval URL/text fields absent; combined tooltip and PayTo terms fields present |
+| Scoped instruction editing | Multiline textarea saves/reads back; Enter inserts a new line; inherited and overridden values resolve correctly |
+| Shopper instructions popover | Hover/focus/click/tap open it; Enter/Space and Escape work; no focus trap or mobile overflow; HTML/Markdown stay plain text |
+| Hidden instructions and PayTo terms | Blank text/toggle off hides only instructions; configured terms remain separate for PayTo, open safely and are not shown for PayID-only |
 | Modal close/Escape/reopen and full-page escape | Same payment/receipt retained; closing is not cancellation; no duplicate request |
 | Modal PayTo/mobile bank/passkeys | Supported browsers complete the bank journey or use the explicit same-payment full-page escape |
 | Forged iframe COMPLETE or wrong message origin/source | Never proof of payment; native placement still requires server verification |
@@ -290,6 +294,7 @@ checks.
 - [ ] Storefront integration tested in a real browser and on mobile bank handoff.
 - [ ] Payment-before-order abandonment/refund runbook staffed.
 - [ ] Native help descriptions inspected in your tenant's Admin UI.
+- [ ] Merchant PayTo terms URL supplied, or hosted merchant terms confirmed with Azupay; tooltip text is not a substitute for terms acceptance.
 - [ ] Required Commerce webhook authenticated and impossible to bypass.
 - [ ] Invoice scheduler tested, monitored and within volume/time limits.
 - [ ] No secrets in Git, storefront assets, error output, URLs or analytics.
@@ -300,3 +305,8 @@ checks.
 
 The local suite uses stubs at external boundaries. It does not replace any of
 these live-account acceptance tests.
+
+Use the [annotated settings walkthrough](ADMIN.md#illustrated-configuration-walkthrough)
+to configure these controls. Its screenshot shows an unsaved example draft,
+not a verified deployment or production-ready settings. Real-device touch and
+bank handoff testing are still required.

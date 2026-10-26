@@ -190,6 +190,8 @@ appropriate store scope. Unlock inherited fields before editing, then save:
 | Merchant PayTo terms are available in hosted checkout | Confirm only when Azupay has configured your terms there |
 
 See [customer education, UX responsibilities and native payment ordering](ADMIN.md#customer-education-and-payto-terms).
+For numbered screenshots of the actual controls, use the
+[illustrated configuration walkthrough](ADMIN.md#illustrated-configuration-walkthrough).
 The browser integration preserves Commerce's method order. It does not add a
 frontend priority override or claim numeric Azupay sort-order support.
 

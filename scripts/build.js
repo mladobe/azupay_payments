@@ -114,6 +114,18 @@ for (const [name, path] of Object.entries(documents)) {
   });
   await writeFile(new URL(`dist/eds/${name}`, root), flattened);
 }
+const documentationImages = [
+  "admin-scope-payments.png",
+  "admin-tooltip-terms.png",
+  "admin-branding-images.png",
+  "admin-save.png",
+];
+await mkdir(new URL("dist/eds/images/", root), { recursive: true });
+for (const name of documentationImages)
+  await cp(
+    new URL(`docs/images/${name}`, root),
+    new URL(`dist/eds/images/${name}`, root),
+  );
 let projectLicense;
 for (const name of ["LICENSE", "LICENSE.md"]) {
   try {
@@ -141,6 +153,7 @@ await writeFile(
         "bin/install.js",
         "payload/client.js",
         ...Object.keys(documents),
+        ...documentationImages.map((name) => `images/${name}`),
         ...(projectLicense ? ["LICENSE"] : []),
         "ACORN-LICENSE.txt",
       ],

@@ -215,6 +215,11 @@ explicit override. Check it again to reset that field to inheritance on save.
 | Automatically invoice paid orders | Enable only after verifying reconciliation |
 | Checkout experience | Full redirect initially; opt into modal after bank/browser UAT |
 | Checkout payment title / byline | Merchant text; blank byline hides it |
+| Show payment instructions tooltip | On to show one compact popover below the logos |
+| Payment instructions tooltip label | Default: How do I pay by bank?; up to 100 characters |
+| Payment instructions | One plain-text textarea, up to 4,000 characters; line breaks preserved; blank hides it |
+| PayTo terms and conditions URL / link text | Your merchant-specific HTTPS terms URL and label; separate from the tooltip |
+| Merchant PayTo terms are available in hosted checkout | Confirm only after Azupay has configured your terms there |
 | Checkout logos | Official marks with permission, custom hosted images, or none |
 | Official logo permission | Confirm only when your agreement grants permission |
 | Custom image URLs / descriptions | Up to three public HTTPS images with accessible descriptions |
@@ -224,6 +229,19 @@ their hosts in `img-src`. Modal mode needs the actual Azupay checkout origins
 allowed in `frame-src`; it always offers a same-payment full-page escape.
 Reload checkout after saving branding. Presentation changes apply only to new
 payment sessions.
+
+Use the [illustrated configuration walkthrough](ADMIN.md#illustrated-configuration-walkthrough)
+for numbered screenshots of scope selection, the tooltip textarea, terms,
+branding and save controls. Use the Sales menu for multiline editing; the
+separate native App Management page uses host-managed text controls.
+
+The tooltip opens on hover, keyboard focus or click/tap and closes with Escape.
+Its plain text does not render HTML or Markdown or replace legal acceptance.
+PayTo terms remain separately accessible when their URL is set and PayTo is
+enabled, even if the tooltip is hidden. The legacy PayID education and PayTo
+bank-approval link fields are no longer configured; 0.1.11 removes those ten
+URL/text fields. Existing tooltip text, terms, payment profiles and titles are
+not reset.
 
 The default checkout title is **Pay by Bank**; the app/menu name remains
 **Azupay Real Time Payments**. Existing saved
@@ -253,6 +271,11 @@ Run the merchant's lint/tests, review only the installer outputs and publish
 through its feature-branch/review/Code Sync process. Keep the installation
 manifest with the changes. The adapter discovers Runtime URLs from the cart's
 OOPE configuration; do not embed a merchant namespace in storefront code.
+
+An existing 0.1.10 storefront already supports the current tooltip and terms
+display. The 0.1.11 schema/admin cleanup does not change that browser bundle or
+require a reinstall. Older bundles need the reviewed upgrade for the popover;
+see [storefront version compatibility](STOREFRONT.md#upgrade-an-unchanged-010-through-0110-installation).
 
 **App Builder deployment does not publish the merchant's storefront.** The normal
 EDS installation returns to the same checkout path; no new CMS return page is
@@ -315,6 +338,8 @@ surfaces. Restore only a compatible, previously verified revision. See
 | A paid order remains pending | Effective autoInvoice scope, actual five-minute timer/rule, reconciliation failures and existing invoices |
 | Modal is blank or a bank handoff fails | CSP/browser/provider restrictions; use Continue in full page for the same payment |
 | Branding has not changed | Save an explicit override and reload checkout; verify the new storefront bundle was published |
+| Retired education/approval fields still appear | Reload the admin page and verify the deployed configuration schema/admin version is 0.1.11 or newer |
+| Tooltip is absent | Check effective scope, Show payment instructions tooltip, nonblank instruction text and a 0.1.10-or-newer storefront |
 | Payment is complete but no order exists | Stop; do not pay again. Use the paid-cart recovery runbook |
 
 Use public issues only for redacted software defects. Send account provisioning

@@ -245,6 +245,10 @@ Try a fabricated receipt: order placement must fail.
 ## 7. Set the admin configuration
 
 Each field has plain-language native help text supplied through `description`.
+For the embedded editor, open **Sales > Azupay Real Time Payments >
+Configuration** and follow the
+[annotated settings walkthrough](ADMIN.md#illustrated-configuration-walkthrough).
+It shares native storage and scope inheritance with App Management.
 
 ### Unlock inherited fields before editing
 
@@ -284,6 +288,21 @@ For the first test:
 | Payment request expiry | `30` |
 | Automatically invoice paid orders | Off until manual reconciliation test |
 | Checkout experience | Full redirect until modal bank/browser UAT passes |
+| Show payment instructions tooltip | On; enter the customer instructions in the Sales menu textarea |
+| Payment instructions tooltip label | How do I pay by bank? or your own short label |
+| PayTo terms and conditions URL | Your public HTTPS merchant terms when PayTo is offered; arrange hosted terms with Azupay if used instead |
+
+**Payment instructions** supports up to 4,000 plain-text characters, including
+newlines. Its label supports up to 100 characters. Clear the text to hide the
+popover; this does not hide a configured PayTo terms link. Terms, bank
+authorisation and payment verification remain separate responsibilities.
+Do not add HTML, API keys, bank credentials or claims of automatic order
+placement to the tooltip.
+
+The five legacy education/approval URL and label pairs were removed in 0.1.11.
+There is one instruction textarea, not separate PayID/PayTo agreement/help
+fields. The PayTo terms URL and label, plus the hosted-terms confirmation, remain.
+See [instructions and legal terms](ADMIN.md#customer-education-and-payto-terms).
 
 Save, then confirm inheritance at the actual storefront store view.
 Keep unused profiles empty; selecting one produces a visible configuration error.

@@ -26,6 +26,7 @@ configuration, storefront installation, testing and troubleshooting.
 | UAT and separately gated production configuration | Production credentials or commercial approval supplied by this repository |
 | Full-page redirect or optional embedded modal | Every bank, mobile browser or passkey journey without merchant UAT |
 | Configurable title, byline and permitted hosted logos | Native image uploads |
+| One scoped instructions tooltip and a separate PayTo terms link | Customizing Azupay's hosted payment page through these fields |
 | ACL-protected V2 admin configuration and documentation tabs | Embedded transaction reporting |
 | Verified payment before synchronous order placement | B2B purchase-order approval and AsyncOrder |
 | Scheduled full offline invoicing of verified paid orders | Automated refunds, partial invoicing and disputes |
@@ -35,15 +36,29 @@ PayID/PayTo choices select server-side credentials for preconfigured hosted
 clients. They do not enable products on an Azupay account. Ask Azupay to provision
 and approve the intended experiences.
 
+### Configure the checkout display
+
+Open **Sales > Azupay Real Time Payments > Configuration**, choose the store
+scope and unlock inherited fields before editing. Set one **Payment instructions**
+textarea and its **Payment instructions tooltip label**; line breaks are
+preserved and blank text hides the tooltip. The separate **PayTo terms and
+conditions URL** remains available. The legacy education and bank-approval
+URL/text fields were removed in 0.1.11.
+
+Follow the [illustrated admin walkthrough](docs/ADMIN.md#illustrated-configuration-walkthrough)
+for annotated screenshots, inheritance, logos and saving. The 0.1.11 cleanup
+does not change the 0.1.10 storefront bundle; no reinstall is needed for an
+already-updated 0.1.10 checkout.
+
 ## Documentation
 
 | Guide | Audience |
 | --- | --- |
 | [Installation](docs/README.md) | Merchants and implementation teams; start here |
 | [Detailed setup](docs/SETUP.md) | App Builder developers and Commerce administrators |
-| [Storefront integration](docs/STOREFRONT.md) | EDS/headless developers; branding and modal configuration |
+| [Storefront integration](docs/STOREFRONT.md) | EDS/headless developers; branding, instructions tooltip and modal configuration |
 | [Operations and UAT](docs/OPERATIONS.md) | Payment operators; invoices, recovery, refunds and launch gates |
-| [Admin menu and PHP comparison](docs/ADMIN.md) | Administrators; V2 menu, permissions, naming and feature gaps |
+| [Illustrated admin guide and PHP comparison](docs/ADMIN.md) | Administrators; annotated settings screenshots, V2 menu, permissions and feature gaps |
 | [Architecture](docs/ARCHITECTURE.md) | Developers; trust boundaries and API contracts |
 | [Repository and release process](docs/PUBLISHING.md) | Maintainers preparing a GitHub repository or release |
 | [Contributing](CONTRIBUTING.md) | Contributors and reviewers |
