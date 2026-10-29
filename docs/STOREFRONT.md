@@ -33,14 +33,14 @@ node dist/eds/bin/install.js --target /absolute/path/to/storefront --dry-run
 node dist/eds/bin/install.js --target /absolute/path/to/storefront
 ```
 
-For another merchant, distribute `dist/azupay-commerce-eds-0.1.11.tgz`.
+For another merchant, distribute `dist/azupay-commerce-eds-0.1.12.tgz`.
 This archive contains a self-contained Node installer, the browser bundle and
 this guide. It contains no Adobe/Azupay credentials and needs no additional
 runtime dependencies.
 
 ```sh
 mkdir azupay-eds-installer
-tar -xzf /path/to/azupay-commerce-eds-0.1.11.tgz -C azupay-eds-installer
+tar -xzf /path/to/azupay-commerce-eds-0.1.12.tgz -C azupay-eds-installer
 node azupay-eds-installer/package/bin/install.js \
   --target /absolute/path/to/storefront --dry-run
 node azupay-eds-installer/package/bin/install.js \
@@ -62,26 +62,27 @@ The installer:
 - Creates `.azupay-eds-installation.json` with release/content hashes. Repeating
   the same installer is a no-op. Edited installed files, unmanaged Azupay code,
   changed releases, symlinked targets and unsupported layouts fail explicitly.
-  The explicit `--upgrade` option supports reviewed releases 0.1.0 through 0.1.10
-  to 0.1.11 after verifying every installed file's hash.
+  The explicit `--upgrade` option supports reviewed releases 0.1.0 through 0.1.11
+  to 0.1.12 after verifying every installed file's hash.
 
 Preflight checks all planned edits before writing. Do not run concurrent
 installers or edit checkout files during installation. Keep the installation
 manifest with the source changes. For an upgrade, review both the merchant's
 checkout changes and the new release before replacing an installation.
 
-### Upgrade an unchanged 0.1.0 through 0.1.10 installation
+### Upgrade an unchanged 0.1.0 through 0.1.11 installation
 
 ```sh
 node dist/eds/bin/install.js --target /absolute/path/to/storefront --upgrade --dry-run
 node dist/eds/bin/install.js --target /absolute/path/to/storefront --upgrade
 ```
 
-This updates the generated browser bundle, registers the live Azupay order-button
+This updates the generated browser bundle, wraps the native PaymentMethods
+renderer for scoped selector branding, registers the live bank-payment order-button
 label in `blocks/commerce-checkout/containers.js`, and updates the installation
-manifest (0.1.3 through 0.1.10 already have the button registration). For 0.1.0/0.1.1 it also
+manifest (0.1.3 through 0.1.11 already have the button registration). For 0.1.0/0.1.1 it also
 adds the documented GraphQL branding hook to `scripts/initializers/checkout.js`;
-an existing 0.1.2 through 0.1.10 initializer is preserved. The native
+an existing 0.1.2 through 0.1.11 initializer is preserved. The native
 order handler is unchanged. Publish all changed outputs through Code Sync.
 If any installed file has been edited since installation, stop and review it;
 the installer will not overwrite it or bypass hash verification.
@@ -118,6 +119,17 @@ and merchant PayTo terms URL/label. Deploy the backend and configuration/admin
 assets for this cleanup. The 0.1.10 browser payload is unchanged and does not
 require reinstalling; an optional installer upgrade updates its manifest.
 Older 0.1.9 clients no longer receive external education links.
+
+Version 0.1.12 white-labels shopper copy and the modal heading, adds an optional
+32-character badge, and shows approved logos/byline/badge in the bank method's
+native selector. The renderer wrapper is installed in `containers.js`; it uses
+the current cart cache ID, observes only that container and decorates the
+existing radio's label without replacing native input, title or selection
+handlers. Native method ordering is unchanged. The observer and branding
+subscription are cleaned up on removal or failed rendering. Revalidate the
+drop-in's native radio/label contract on future Adobe upgrades. Details-slot
+branding remains available when the wrapper is not installed. Deploy the new
+schema/backend and publish all upgraded storefront files, not just the bundle.
 
 ## 3. Review, build and publish the merchant storefront
 
@@ -226,7 +238,9 @@ checkout initializes. It reads OOPE deployment metadata through the existing
 shopper transport, fetches store-scoped branding and updates only Azupay's
 available/selected titles before native drop-in transformation. It preserves
 other methods, auth headers, model transformations and other hooks. The detail
-slot displays the byline and images without scraping or modifying drop-in DOM.
+slot provides a compatible byline/image/badge display for manual integrations.
+The installed selector enhancement adds these to the native bank label instead
+and hides duplicate selected-detail branding only after finding that label.
 Settings are cached for the page lifecycle; reload checkout after saving.
 Cosmetic configuration failures retain the original Commerce title, log
 `CHECKOUT_BRANDING_UNAVAILABLE` and show a visible warning when Azupay is selected,
@@ -248,7 +262,8 @@ keys into a frontend config. Do not expose the private `reconcile` action.
 
 1. Use an eligible Australian AUD cart and complete email, addresses, shipping,
    discounts, taxes and required consent/terms.
-2. Select Azupay and click **Continue to Azupay**.
+2. Select the configured bank method (recommended title **Pay by Bank**) and
+   click **Pay by Bank**.
 3. The server verifies trusted quote totals and creates/reuses a hosted session.
    The browser stores only the signed receipt/session in same-tab storage.
 4. Pay through Azupay UAT and return to the existing checkout, or finish payment
@@ -301,8 +316,12 @@ production hosts must be taken from your approved provider configuration.
 This is merchant/CDN CSP configuration; the installer does not loosen policies.
 
 The modal has a labelled iframe, native focus containment, Escape/close, focus
-restoration, scroll locking, an explicit **Check payment** button and a
-**Continue in full page** escape using the same payment and original return URL.
+restoration and scroll locking. **Close payment window** stays visible;
+**Need help with your payment?** contains **Check payment status** and
+**Open payment in full page**, using the same payment and original return URL.
+Checking only verifies status; it never creates another payment. The disclosure
+opens automatically on embedding/verification failure, polling pause or
+unsupported dialogs.
 Closing is not cancellation and does not remove the saved receipt or unlock cart
 changes. Select **Complete your order** to check/reopen the same saved session.
 
@@ -317,7 +336,8 @@ Test guest/signed-in flows, close/Escape/reopen, refresh, pending/expired/failed
 verification and the full-page escape. Test actual PayID bank handoffs and PayTo
 bank approval/passkeys on your supported mobile and desktop browsers before
 enabling modal for customers. Cross-origin iframe/passkey policy and bank-app
-handoffs depend on the provider/browser. A full-page escape is always visible;
+handoffs depend on the provider/browser. A full-page escape is always available
+in the help disclosure;
 embedding failures are not silently treated as success. Azupay hides its PayID
 QR below 600px iframe width, so narrow phones use the provider's mobile layout.
 Keep full redirect if your supported bank/browser journey cannot run embedded.

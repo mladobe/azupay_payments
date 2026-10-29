@@ -44,7 +44,8 @@ It returns only shopper-facing display data, for example:
 ```json
 {
   "title": "Pay by Bank",
-  "byline": "Pay securely from your bank account.",
+  "byline": "Fast and secure",
+  "badge": "",
   "logos": [],
   "guidance": {
     "methods": ["payid", "payto"],
@@ -78,7 +79,20 @@ From 0.1.11, the retired PayID education and PayTo bank-approval URL/label
 settings are absent from the shared schema and ignored if still stored. They
 are not returned or validated as current branding. Current tooltip/terms field
 names are unchanged. The existing 0.1.10 browser bundle already implements this
-display contract; the cleanup changes backend/schema/admin assets only.
+0.1.11 tooltip/terms contract; that cleanup changes backend/schema/admin assets
+only. Version 0.1.12 adds optional `badge` text (at most 32 characters). New
+clients accept older payloads without it; older clients ignore the badge.
+
+The portable installer wraps only the PaymentMethods renderer with
+`withAzupaySelector`, bound to the current cart ID from the merchant's existing
+cart cache. A container-scoped MutationObserver decorates only the native
+`payment-method` radio with value `azupay`, appending approved logos, byline and
+badge to its enclosing label. It does not replace radios, native titles,
+selection handlers, cart models or the returned method order. Duplicate
+selected-detail branding is hidden only after enhancement succeeds. The native
+detail slot remains the presentation for adapters without the enhancement.
+Unmount and failed render disconnect the observer and branding subscription.
+Revalidate this explicit drop-in 3.x DOM compatibility boundary on upgrades.
 
 The disclosure uses native `details`/`summary` controls, supports hover, focus,
 click/tap and Escape, and does not trap focus. It is separate from the hosted
@@ -161,7 +175,11 @@ without return/cancel navigation inside the frame. Exact provider origin and
 iframe `event.source` are required for `PaymentRequest` message wakeups.
 Messages never establish payment: the signed-receipt status action revalidates
 the provider. Five-second polling stops after 60 checks or a verification error;
-manual retry remains available. A verified modal payment closes the dialog but
+manual retry remains available in **Need help with your payment?**, alongside
+the same-payment full-page option. The disclosure opens automatically on
+embedding/verification failure, polling pause or unsupported dialogs. The
+wrapper uses provider-neutral text, without rewriting the cross-origin hosted
+page. A verified modal payment closes the dialog but
 retains the receipt until the shopper's final native order submission succeeds.
 Closing or escaping the modal never cancels/recreates the provider request.
 

@@ -4,6 +4,25 @@ Changes are grouped by implementation version. These entries describe local
 development history, not previously published GitHub releases or certification.
 The first public release is pending ownership/licence approval and acceptance.
 
+## 0.1.12
+
+- Apply Azupay UX feedback: white-label shopper messages and payment modal;
+  retain the Azupay name in administration and technical integration identifiers.
+  Recommended title/byline are Pay by Bank and Fast and secure. Saved custom
+  settings are preserved and should be reviewed before publishing.
+- Add an optional scoped, plain-text checkout badge (32 characters, blank by
+  default). Enhance only the existing bank radio label with approved logos,
+  byline and badge; preserve native ordering, selection and keyboard handling.
+  Disconnect the container-scoped observer and branding subscription on unmount.
+- Put manual status verification and same-payment full-page recovery in a
+  secondary help disclosure. Expand it automatically on embedding/verification
+  failure, polling pause or unsupported dialogs. Payment trust checks and the
+  final native order-completion click are unchanged.
+- Reviewed installer upgrades from 0.1.0 through 0.1.11. Deploy updated App
+  Builder assets and publish all upgraded storefront outputs for these changes.
+- Hosted merchant identity and internal PayTo terms still require Azupay
+  configuration; no merchant terms URL or legal acceptance is invented.
+
 ## 0.1.11
 
 - Remove the five legacy PayID education and PayTo bank-approval URL/label

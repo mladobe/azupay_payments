@@ -263,6 +263,57 @@ function patchContainers(source) {
     "azupayPaymentSlot",
     "azupayButtonLabel",
   ]);
+  return patchSelector(edit(source, edits));
+}
+
+function patchSelector(source) {
+  const tree = syntax(source);
+  const call = one(
+    nodes(
+      tree,
+      (node) =>
+        node.type === "CallExpression" &&
+        node.callee.type === "MemberExpression" &&
+        node.callee.object.name === "CheckoutProvider" &&
+        node.callee.property.name === "render" &&
+        node.arguments[0]?.name === "PaymentMethods",
+    ),
+    "PaymentMethods renderer",
+  );
+  if (
+    source.includes("withAzupaySelector") ||
+    source.includes("azupayGetCartDataFromCache")
+  )
+    throw new Error("A conflicting payment selector enhancement exists.");
+  const cartImports = tree.body.filter(
+    (node) =>
+      node.type === "ImportDeclaration" &&
+      node.source.value === "@dropins/storefront-cart/api.js",
+  );
+  const namespace =
+    cartImports.length === 1
+      ? cartImports[0].specifiers.find(
+          (entry) => entry.type === "ImportNamespaceSpecifier",
+        )?.local.name
+      : undefined;
+  const cachedCart = namespace
+    ? `${namespace}.getCartDataFromCache`
+    : "azupayGetCartDataFromCache";
+  const edits = [
+    { start: call.start, end: call.start, text: "withAzupaySelector(" },
+    {
+      start: call.end,
+      end: call.end,
+      text: `, () => ${cachedCart}()?.id)`,
+    },
+  ];
+  addImports(source, tree, edits, "../../scripts/azupay/client.js", [
+    "withAzupaySelector",
+  ]);
+  if (!namespace)
+    addImports(source, tree, edits, "@dropins/storefront-cart/api.js", [
+      "getCartDataFromCache as azupayGetCartDataFromCache",
+    ]);
   return edit(source, edits);
 }
 
@@ -392,7 +443,7 @@ export async function installEds({
     if (!changed)
       return { status: "unchanged", files: Object.keys(manifest.files) };
     if (
-      VERSION !== "0.1.11" ||
+      VERSION !== "0.1.12" ||
       ![
         "0.1.0",
         "0.1.1",
@@ -405,10 +456,11 @@ export async function installEds({
         "0.1.8",
         "0.1.9",
         "0.1.10",
+        "0.1.11",
       ].includes(manifest.version)
     )
       throw new Error(
-        "Only the reviewed 0.1.0 through 0.1.10 to 0.1.11 upgrade is supported.",
+        "Only the reviewed 0.1.0 through 0.1.11 to 0.1.12 upgrade is supported.",
       );
     const initializerPath = await safePath(root, INITIALIZER);
     const oldInitializer = await readFile(initializerPath, "utf8");
@@ -417,18 +469,21 @@ export async function installEds({
       : oldInitializer;
     const containersPath = await safePath(root, CONTAINERS);
     const oldContainers = await readFile(containersPath, "utf8");
-    const containers = [
-      "0.1.3",
-      "0.1.4",
-      "0.1.5",
-      "0.1.6",
-      "0.1.7",
-      "0.1.8",
-      "0.1.9",
-      "0.1.10",
-    ].includes(manifest.version)
-      ? oldContainers
-      : patchModalButton(oldContainers);
+    const containers = patchSelector(
+      [
+        "0.1.3",
+        "0.1.4",
+        "0.1.5",
+        "0.1.6",
+        "0.1.7",
+        "0.1.8",
+        "0.1.9",
+        "0.1.10",
+        "0.1.11",
+      ].includes(manifest.version)
+        ? oldContainers
+        : patchModalButton(oldContainers),
+    );
     const files = [
       CLIENT,
       ...(containers !== oldContainers ? [CONTAINERS] : []),

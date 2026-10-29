@@ -8,8 +8,13 @@ import {
   DEFAULT_INSTRUCTIONS_LABEL,
   DEFAULT_TERMS_LABEL,
   helpUrl,
+  paymentInstructions,
 } from "../src/shared/checkout-guidance.js";
-import { azupayPaymentSlot, setupAzupayBranding } from "../storefront/eds.js";
+import {
+  azupayPaymentSlot,
+  setupAzupayBranding,
+  withAzupaySelector,
+} from "../storefront/eds.js";
 
 describe("public store-scoped checkout branding", () => {
   it("preserves multiline plain-text tooltip content, supports hiding and enforces exact limits", () => {
@@ -188,9 +193,14 @@ describe("public store-scoped checkout branding", () => {
     );
   });
   it("uses safe text defaults and gates official logos on merchant permission", () => {
+    assert.doesNotMatch(
+      [DEFAULT_INSTRUCTIONS, ...Object.values(paymentInstructions)].join("\n"),
+      /Azupay/i,
+    );
     assert.deepEqual(brandingSettings({ methods: "both" }), {
       title: "Pay by Bank",
-      byline: "Pay securely from your bank account.",
+      byline: "Fast and secure",
+      badge: "",
       logos: [],
       guidance: {
         methods: ["payid", "payto"],
@@ -238,6 +248,18 @@ describe("public store-scoped checkout branding", () => {
       ),
       apiKey: "must-not-be-exposed",
     });
+    it("supports an optional plain-text badge with an exact 32-character limit", () => {
+      assert.equal(brandingSettings({ checkoutBadge: " New " }).badge, "New");
+      assert.equal(brandingSettings({ checkoutBadge: " " }).badge, "");
+      assert.equal(
+        brandingSettings({ checkoutBadge: "x".repeat(32) }).badge.length,
+        32,
+      );
+      for (const checkoutBadge of [42, "x".repeat(33)])
+        assert.throws(() => brandingSettings({ checkoutBadge }), {
+          code: "INVALID_BRANDING",
+        });
+    });
     assert.equal(settings.title, "My bank payment");
     assert.equal(settings.byline, "");
     assert.equal(settings.logos.length, 3);
@@ -273,6 +295,7 @@ describe("public store-scoped checkout branding", () => {
 function transportFixture({
   failed = false,
   logos = [],
+  badge,
   guidance,
   cartId = `cart-${failed ? "failed" : "success"}`,
 } = {}) {
@@ -315,6 +338,7 @@ function transportFixture({
           title: "Pay securely",
           byline: "Your bank, your choice",
           logos,
+          ...(badge === undefined ? {} : { badge }),
           ...(guidance === undefined ? {} : { guidance }),
         }),
       };
@@ -378,10 +402,21 @@ describe("documented GraphQL branding hook", () => {
           open: false,
           children: [],
           append(...children) {
+            for (const child of children) child.parentElement = this;
             this.children.push(...children);
+          },
+          remove() {
+            if (this.parentElement) {
+              const parent = this.parentElement;
+              parent.children.splice(parent.children.indexOf(this), 1);
+              this.parentElement = null;
+            }
           },
           setAttribute(name, value) {
             this.attributes[name] = value;
+          },
+          removeAttribute(name) {
+            delete this.attributes[name];
           },
           addEventListener(name, handler) {
             this.events[name] = handler;
@@ -394,6 +429,11 @@ describe("documented GraphQL branding hook", () => {
               node === this ||
               this.children.some((child) => child.contains(node))
             );
+          },
+          closest(tag) {
+            return this.tagName === tag
+              ? this
+              : this.parentElement?.closest(tag);
           },
         };
       },
@@ -418,6 +458,162 @@ describe("documented GraphQL branding hook", () => {
     });
     return { rendered, doc };
   }
+  function selectorFixture(t, cartId) {
+    const { doc } = mockRender(t, cartId);
+    const container = doc.createElement("div");
+    let label = doc.createElement("label");
+    const nativeTitle = doc.createElement("span");
+    nativeTitle.textContent = "Pay by Bank";
+    label.append(doc.createElement("label"), nativeTitle);
+    container.append(label);
+    let queries = 0;
+    container.querySelector = (selector) => {
+      queries += 1;
+      assert.equal(
+        selector,
+        'input[type="radio"][name="payment-method"][value="azupay"]',
+      );
+      return { closest: () => label.children[0] };
+    };
+    let observer;
+    const original = Object.getOwnPropertyDescriptor(
+      globalThis,
+      "MutationObserver",
+    );
+    Object.defineProperty(globalThis, "MutationObserver", {
+      configurable: true,
+      value: class {
+        constructor(update) {
+          observer = this;
+          this.update = update;
+        }
+        observe(node, options) {
+          assert.equal(node, container);
+          assert.deepEqual(options, { childList: true, subtree: true });
+        }
+        disconnect() {
+          this.disconnected = true;
+        }
+      },
+    });
+    t.after(() => {
+      if (original)
+        Object.defineProperty(globalThis, "MutationObserver", original);
+      else delete globalThis.MutationObserver;
+    });
+    return {
+      container,
+      label: () => label,
+      observer: () => observer,
+      queries: () => queries,
+      rerender() {
+        label.remove();
+        label = doc.createElement("label");
+        const innerLabel = doc.createElement("label");
+        label.append(innerLabel, nativeTitle);
+        container.append(label);
+        observer.update();
+      },
+    };
+  }
+  it("decorates only the native bank label, survives rerenders and cleans up observer/subscription on unmount", async (t) => {
+    const cartId = "selector-cart";
+    const f = transportFixture({
+      cartId,
+      badge: "<b>New</b>",
+      logos: brandingSettings({
+        methods: "both",
+        officialLogoPermission: true,
+      }).logos,
+    });
+    await f.run();
+    const selector = selectorFixture(t, cartId);
+    let currentCart = cartId;
+    let removed = 0;
+    const native = { remove: () => ++removed, setProps() {} };
+    const api = await withAzupaySelector(
+      async (node) => {
+        assert.equal(node, selector.container);
+        return native;
+      },
+      () => currentCart,
+    )(selector.container);
+    assert.equal(api, native);
+    function checkLabel() {
+      assert.equal(selector.label().children.length, 3);
+      assert.equal(selector.label().children[1].textContent, "Pay by Bank");
+      assert.equal(selector.label().children[0].children.length, 0);
+      const decoration = selector.label().children[2];
+      assert.equal(
+        decoration.children[1].textContent,
+        "Your bank, your choice",
+      );
+      assert.equal(decoration.children[2].children.length, 2);
+      assert.equal(decoration.children[3].textContent, "<b>New</b>");
+      assert.equal(decoration.children[3].children.length, 0);
+    }
+    checkLabel();
+    selector.observer().update();
+    checkLabel();
+    selector.rerender();
+    checkLabel();
+    currentCart = "different-cart";
+    selector.observer().update();
+    assert.equal(selector.label().children.length, 2);
+    assert.equal(
+      selector.container.attributes["data-azupay-selector-enhanced"],
+      undefined,
+    );
+    currentCart = cartId;
+    await f.run();
+    checkLabel();
+    assert.equal(api.remove(), 1);
+    assert.equal(selector.observer().disconnected, true);
+    assert.equal(selector.label().children.length, 2);
+    const queries = selector.queries();
+    await f.run();
+    assert.equal(selector.queries(), queries);
+    assert.equal(removed, 1);
+  });
+  it("cleans up failed rendering and tolerates older branding without a badge", async (t) => {
+    const f = transportFixture({ cartId: "selector-failed-render" });
+    await f.run();
+    const selector = selectorFixture(t, "selector-failed-render");
+    await assert.rejects(
+      withAzupaySelector(
+        async () => {
+          throw new Error("Native render failed");
+        },
+        () => "selector-failed-render",
+      )(selector.container),
+      /Native render failed/,
+    );
+    assert.equal(selector.observer().disconnected, true);
+    const queries = selector.queries();
+    await f.run();
+    assert.equal(selector.queries(), queries);
+    const api = await withAzupaySelector(
+      async () => ({ remove() {} }),
+      () => "selector-failed-render",
+    )(selector.container);
+    const decoration = selector.label().children[2];
+    assert.equal(
+      decoration.children.some(
+        (node) => node.className === "azupay-payment-badge",
+      ),
+      false,
+    );
+    api.remove();
+  });
+  it("rejects malformed optional badge payloads without disabling other methods", async (t) => {
+    const logs = [];
+    t.mock.method(console, "error", (code) => logs.push(code));
+    for (const badge of [null, 42, "x".repeat(33)]) {
+      const f = transportFixture({ badge });
+      assert.deepEqual(await f.run(), f.response);
+    }
+    assert.equal(logs.length, 3);
+  });
   it("renders one safe multiline disclosure and keeps merchant terms outside it", async (t) => {
     const guidance = brandingSettings({
       methods: "both",
@@ -715,6 +911,7 @@ it("public branding action validates CORS, resolves store code server-side and e
   assert.deepEqual(result.body, {
     title: "Store seven",
     byline: "Bonjour",
+    badge: "",
     logos: [],
     guidance: brandingSettings({ methods: "both" }).guidance,
   });

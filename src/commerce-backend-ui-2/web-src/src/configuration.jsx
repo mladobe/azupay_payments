@@ -12,6 +12,7 @@ import {
 const limits = {
   checkoutTitle: 100,
   checkoutByline: 250,
+  checkoutBadge: 32,
   checkoutInstructionsLabel: 100,
   checkoutInstructions: 4000,
   paytoTermsUrl: 2048,

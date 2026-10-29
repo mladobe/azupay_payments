@@ -214,7 +214,8 @@ explicit override. Check it again to reset that field to inheritance on save.
 | Payment request expiry | A whole number from 5 to 120 minutes |
 | Automatically invoice paid orders | Enable only after verifying reconciliation |
 | Checkout experience | Full redirect initially; opt into modal after bank/browser UAT |
-| Checkout payment title / byline | Merchant text; blank byline hides it |
+| Checkout payment title / byline | Pay by Bank / Fast and secure recommended; review saved provider attribution; blank byline hides it |
+| Checkout payment badge | Optional plain text, up to 32 characters; blank by default; needs 0.1.12 storefront adapter |
 | Show payment instructions tooltip | On to show one compact popover below the logos |
 | Payment instructions tooltip label | Default: How do I pay by bank?; up to 100 characters |
 | Payment instructions | One plain-text textarea, up to 4,000 characters; line breaks preserved; blank hides it |
@@ -275,7 +276,9 @@ OOPE configuration; do not embed a merchant namespace in storefront code.
 An existing 0.1.10 storefront already supports the current tooltip and terms
 display. The 0.1.11 schema/admin cleanup does not change that browser bundle or
 require a reinstall. Older bundles need the reviewed upgrade for the popover;
-see [storefront version compatibility](STOREFRONT.md#upgrade-an-unchanged-010-through-0110-installation).
+Version 0.1.12 does require upgrading and publishing the storefront for
+white-label copy, selector branding and simplified modal controls;
+see [storefront version compatibility](STOREFRONT.md#upgrade-an-unchanged-010-through-0111-installation).
 
 **App Builder deployment does not publish the merchant's storefront.** The normal
 EDS installation returns to the same checkout path; no new CMS return page is
@@ -336,7 +339,7 @@ surfaces. Restore only a compatible, previously verified revision. See
 | Method is absent | Enabled/profile settings, AUD/AU eligibility and OOPE store registration |
 | Clicking Place Order skips bank checkout | Publish the EDS adapter; backend deployment alone cannot wire the shopper UI |
 | A paid order remains pending | Effective autoInvoice scope, actual five-minute timer/rule, reconciliation failures and existing invoices |
-| Modal is blank or a bank handoff fails | CSP/browser/provider restrictions; use Continue in full page for the same payment |
+| Modal is blank or a bank handoff fails | CSP/browser/provider restrictions; use Need help with your payment? > Open payment in full page for the same payment |
 | Branding has not changed | Save an explicit override and reload checkout; verify the new storefront bundle was published |
 | Retired education/approval fields still appear | Reload the admin page and verify the deployed configuration schema/admin version is 0.1.11 or newer |
 | Tooltip is absent | Check effective scope, Show payment instructions tooltip, nonblank instruction text and a 0.1.10-or-newer storefront |

@@ -107,7 +107,7 @@ const request = { cartId: "existing-cart", code: "azupay" };
 describe("portable Azupay EDS adapter", () => {
   it("labels a returning session as order completion without claiming it is paid", async () => {
     const f = fixture();
-    assert.equal(azupayButtonLabel(f.storage), "Continue to Azupay");
+    assert.equal(azupayButtonLabel(f.storage), "Pay by Bank");
     await f.handler()(request);
     assert.equal(azupayButtonLabel(f.storage), "Complete your order");
   });
@@ -244,7 +244,8 @@ describe("portable Azupay EDS adapter", () => {
     );
     assert.equal(f.redirects.length, 1);
     assert.match(f.status.textContent, /has not been confirmed/);
-    assert.match(f.status.textContent, /will not send you back to Azupay/);
+    assert.match(f.status.textContent, /will not request another payment/);
+    assert.doesNotMatch(f.status.textContent, /Azupay/);
   });
   it("attaches a verified receipt before native placement and clears after confirmation", async () => {
     const f = fixture();

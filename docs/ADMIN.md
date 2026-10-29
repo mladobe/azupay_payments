@@ -212,9 +212,9 @@ For a simple multiline structure, adapt this original example to your enabled
 payment options and hosted flow:
 
 ```text
-1. Continue to Azupay and follow the bank payment instructions.
+1. Select Pay by Bank and follow the bank payment instructions.
 2. Check the business name, amount and payment details in your bank.
-3. Return to Commerce checkout. Once payment is verified, select Complete your order.
+3. Return to checkout. Once payment is verified, select Complete your order.
 
 If your bank delays the payment, check with your bank and do not pay again.
 ```
@@ -259,6 +259,46 @@ tooltip with mouse hover, keyboard focus, Enter/Space and Escape; test tapping o
 a real mobile device too. Confirm that only the tooltip is dismissed and that
 the separate terms link still works. Complete the
 [UAT checklist](OPERATIONS.md#uat-acceptance-checklist) before enabling production.
+
+## White-label checkout and hosted branding
+
+Version 0.1.12 follows Azupay's UX review without changing payment processing:
+
+- Set **Checkout payment title** to **Pay by Bank** and **Checkout payment
+  byline** to **Fast and secure**, or appropriate merchant wording. Remove saved
+  provider attribution such as "powered by Azupay". Existing overrides are not
+  silently rewritten by a schema upgrade.
+- **Checkout payment badge** is optional plain text, at most 32 characters.
+  Leave it blank for no badge. If using a highlight such as **New**, make sure
+  the claim remains accurate. The annotated screenshots above predate this
+  field and retain their original example values.
+- After upgrading the storefront to 0.1.12, the existing native bank selector
+  displays the approved payment logos, byline and badge. Official-mark permission
+  remains required; no logos are bundled or enabled without that permission.
+  The selected details keep the instruction tooltip and separate terms link.
+- Review saved instruction text for provider names too. The new defaults and
+  built-in shopper messages use white-label wording, but merchant-authored text
+  is preserved. The admin app/menu name remains **Azupay Real Time Payments**.
+- The modal heading is **Pay securely from your bank account**. **Close payment
+  window** remains visible. **Need help with your payment?** contains **Check
+  payment status** (verification only, no new charge) and **Open payment in full
+  page** (the same payment, not a new request). Help opens automatically when
+  embedding or verification fails, automatic checks pause, or dialogs are
+  unsupported.
+
+The page inside the iframe is hosted by Azupay. This extension cannot rename its
+merchant/payee, replace its logo or inject links into it. Ask Azupay to configure
+the approved merchant identity and merchant-specific PayTo terms for **each
+provisioned hosted client**, including separate UAT and production profiles.
+For the Adobe Council installation, the requested display name is **Adobe
+Council**; Azupay must confirm that it matches the authorised merchant identity.
+Do not treat that request as a completed provider configuration change.
+
+Provide your actual merchant PayTo terms URL when ready, or arrange and verify
+terms inside hosted checkout. Until then leave the URL and hosted confirmation
+unset and keep this as an outstanding launch requirement. A privacy notice alone
+is not merchant PayTo terms. Neither this extension's tooltip nor a bank
+agreement approval substitutes for the required legal terms and settlement.
 
 ## Customer education and PayTo terms
 

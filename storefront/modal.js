@@ -21,7 +21,12 @@ export function openHostedCheckout({
   const canEmbed = typeof dialog.showModal === "function";
   const heading = doc.createElement("h2");
   heading.id = `azupay-modal-${++sequence}`;
-  heading.textContent = "Pay securely with Azupay";
+  heading.textContent = "Pay securely from your bank account";
+  Object.assign(heading.style, {
+    fontSize: "1.25rem",
+    lineHeight: "1.4",
+    margin: "0 0 8px",
+  });
   dialog.setAttribute("aria-labelledby", heading.id);
   dialog.className = "azupay-checkout-modal";
   Object.assign(dialog.style, {
@@ -40,7 +45,7 @@ export function openHostedCheckout({
   message.textContent =
     "Complete your bank payment below. Closing this window does not cancel it. If you've already paid, do not pay again.";
   const frame = doc.createElement("iframe");
-  frame.title = "Azupay secure bank payment";
+  frame.title = "Secure bank payment";
   frame.referrerPolicy = "no-referrer";
   frame.setAttribute(
     "allow",
@@ -64,11 +69,26 @@ export function openHostedCheckout({
   close.textContent = "Close payment window";
   const check = doc.createElement("button");
   check.type = "button";
-  check.textContent = "Check payment";
+  check.textContent = "Check payment status";
   const redirect = doc.createElement("button");
   redirect.type = "button";
-  redirect.textContent = "Continue in full page";
-  controls.append(close, check, redirect);
+  redirect.textContent = "Open payment in full page";
+  const help = doc.createElement("details");
+  const summary = doc.createElement("summary");
+  summary.textContent = "Need help with your payment?";
+  const explanation = doc.createElement("p");
+  explanation.textContent =
+    "Payment status is checked automatically. Check payment status only checks this existing payment; it does not charge you again. If the embedded page or your banking app is not working, open this same payment in a full page.";
+  const recovery = doc.createElement("div");
+  Object.assign(recovery.style, {
+    display: "flex",
+    flexWrap: "wrap",
+    gap: "12px",
+    marginBottom: "12px",
+  });
+  recovery.append(check, redirect);
+  help.append(summary, explanation, recovery);
+  controls.append(close, help);
   dialog.append(heading, message, controls, frame);
   const previousFocus = focusTarget ?? doc.activeElement;
   const previousOverflow = doc.body.style.overflow;
@@ -105,7 +125,8 @@ export function openHostedCheckout({
       console.error("[azupay] CHECKOUT_FRAME_UNAVAILABLE");
       message.setAttribute("role", "alert");
       message.textContent =
-        "If bank checkout is blocked or not working, select Continue in full page to open this same payment. Do not start another payment.";
+        "If bank checkout is blocked or not working, select Open payment in full page under Need help with your payment? to open this same payment. Do not start another payment.";
+      help.open = true;
     }
     function onPolicyViolation(event) {
       if (
@@ -137,14 +158,16 @@ export function openHostedCheckout({
           "Your bank payment has not been confirmed yet. If you've paid, wait and check again; do not pay again.";
         if (checks >= 60)
           message.textContent +=
-            " Automatic checks have paused. Select Check payment when ready.";
+            " Automatic checks have paused. Select Check payment status under Need help with your payment? when ready.";
+        if (checks >= 60) help.open = true;
         schedule();
       } catch {
         if (finished) return;
         console.error("[azupay] CHECKOUT_PAYMENT_CHECK_FAILED");
         message.setAttribute("role", "alert");
         message.textContent =
-          "Payment verification is unavailable. Select Check payment to retry, or close this window and check from checkout. If you've paid, do not pay again.";
+          "Payment verification is unavailable. Select Check payment status under Need help with your payment? to retry, or close this window and check from checkout. If you've paid, do not pay again.";
+        help.open = true;
       } finally {
         checking = false;
         check.disabled = false;
@@ -177,6 +200,13 @@ export function openHostedCheckout({
       event.preventDefault();
       onClose();
     });
+    dialog.addEventListener("keydown", (event) => {
+      if (event.key === "Escape") {
+        event.preventDefault();
+        event.stopPropagation();
+        onClose();
+      }
+    });
     dialog.addEventListener("close", onClose);
     frame.addEventListener("error", unavailable);
     try {
@@ -193,7 +223,8 @@ export function openHostedCheckout({
         frame.hidden = true;
         message.setAttribute("role", "alert");
         message.textContent =
-          "Your browser cannot open an embedded payment window. Select Continue in full page to open the same saved payment.";
+          "Your browser cannot open an embedded payment window. Select Open payment in full page to open the same saved payment.";
+        help.open = true;
         redirect.focus();
       }
       doc.addEventListener("securitypolicyviolation", onPolicyViolation);

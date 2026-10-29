@@ -41,10 +41,10 @@ export function mountAzupay({
   message.setAttribute("role", "status");
   message.setAttribute("aria-live", "polite");
   message.textContent =
-    "Pay securely with your bank using Azupay. Your order is placed after payment is verified.";
+    "Pay securely from your bank account. After payment is verified, select Complete your order to finish.";
   const button = document.createElement("button");
   button.type = "button";
-  button.textContent = "Continue to Azupay";
+  button.textContent = "Pay by Bank";
   root.append(message, button);
   container.replaceChildren(root);
   let disposed = false;
@@ -71,7 +71,7 @@ export function mountAzupay({
   async function run({ present = true } = {}) {
     button.disabled = true;
     try {
-      message.textContent = "Checking payment with Azupay...";
+      message.textContent = "Checking your bank payment...";
       const result = await flow.run({
         redirect: location.pathname !== returnPage.pathname,
         present,
@@ -101,7 +101,7 @@ export function mountAzupay({
         button.textContent = "Check payment";
         return;
       }
-      message.textContent = "Opening Azupay...";
+      message.textContent = "Opening secure bank payment...";
     } catch (error) {
       if (!disposed) {
         message.textContent = `${error.message} If money has left your bank, do not pay again.`;

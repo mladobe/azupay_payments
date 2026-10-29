@@ -87,6 +87,14 @@ export const configSchema = [
       "Name shown for this payment method in the checkout selector. Pay by Bank is recommended by Azupay's UX guides. Enter plain text, up to 100 characters. Existing custom titles are preserved. Refresh checkout after saving.",
   },
   {
+    name: "checkoutBadge",
+    label: "Checkout payment badge",
+    type: "text",
+    default: "",
+    description:
+      "Optional short highlight such as New, up to 32 plain-text characters. Blank hides it. Shown with the payment logos in the checkout selector after installing the 0.1.12 storefront adapter. Use accurate wording and remove time-sensitive claims when no longer relevant.",
+  },
+  {
     name: "checkoutGuidanceEnabled",
     label: "Show payment instructions tooltip",
     type: "boolean",
@@ -138,9 +146,9 @@ export const configSchema = [
     name: "checkoutByline",
     label: "Checkout payment byline",
     type: "text",
-    default: "Pay securely from your bank account.",
+    default: "Fast and secure",
     description:
-      "Short explanation shown beneath the selected payment method, up to 250 characters. Leave blank to hide it. HTML is not supported.",
+      "Short benefit shown with the payment method, up to 250 characters. Fast and secure is recommended. Leave blank to hide it. HTML is not supported. Saved custom values are preserved; remove any provider attribution for a white-label checkout.",
   },
   {
     name: "checkoutLogoMode",

@@ -25,7 +25,7 @@ configuration, storefront installation, testing and troubleshooting.
 | PayID, one-off PayTo, or both, using provisioned Azupay profiles | Recurring agreements, subscriptions and saved bank accounts |
 | UAT and separately gated production configuration | Production credentials or commercial approval supplied by this repository |
 | Full-page redirect or optional embedded modal | Every bank, mobile browser or passkey journey without merchant UAT |
-| Configurable title, byline and permitted hosted logos | Native image uploads |
+| Configurable title, byline, optional badge and permitted hosted selector logos | Native image uploads |
 | One scoped instructions tooltip and a separate PayTo terms link | Customizing Azupay's hosted payment page through these fields |
 | ACL-protected V2 admin configuration and documentation tabs | Embedded transaction reporting |
 | Verified payment before synchronous order placement | B2B purchase-order approval and AsyncOrder |
@@ -45,10 +45,17 @@ preserved and blank text hides the tooltip. The separate **PayTo terms and
 conditions URL** remains available. The legacy education and bank-approval
 URL/text fields were removed in 0.1.11.
 
+Use **Pay by Bank** with **Fast and secure** for a white-label presentation.
+An optional **Checkout payment badge** accepts up to 32 plain-text characters;
+blank hides it. Approved logos, byline and badge appear in the native payment
+selector with the 0.1.12 storefront adapter. Saved custom text is not overwritten.
+
 Follow the [illustrated admin walkthrough](docs/ADMIN.md#illustrated-configuration-walkthrough)
-for annotated screenshots, inheritance, logos and saving. The 0.1.11 cleanup
-does not change the 0.1.10 storefront bundle; no reinstall is needed for an
-already-updated 0.1.10 checkout.
+for annotated screenshots, inheritance, logos and saving, and the
+[white-label setup](docs/ADMIN.md#white-label-checkout-and-hosted-branding) for
+hosted merchant branding. Version 0.1.12 requires deploying the app and upgrading
+and publishing the storefront outputs; App Builder deployment alone does not
+update the selector or modal.
 
 ## Documentation
 

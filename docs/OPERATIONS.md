@@ -272,6 +272,9 @@ test bank credentials or send real funds to UAT.
 | Multi-store configuration | Correct store scope and explicit OOPE store registration |
 | Doc/tooltips | Admin can follow profile, UAT and production guidance |
 | Current admin configuration | Retired education/approval URL/text fields absent; combined tooltip and PayTo terms fields present |
+| White-label selector | Pay by Bank and merchant benefit text; permitted logos sized at most 100 x 48 CSS pixels; optional badge blank by default; no changed method ordering or keyboard selection |
+| Selector lifecycle | Bank branding appears even when another method is selected; native rerenders do not duplicate it; unmount disconnects observer/subscription; another cart never inherits this cart's branding |
+| Modal help | Provider-neutral heading; recovery controls under Need help with your payment?; help opens on frame/verification failure and polling pause; status check never charges and full-page link reuses the saved payment |
 | Scoped instruction editing | Multiline textarea saves/reads back; Enter inserts a new line; inherited and overridden values resolve correctly |
 | Shopper instructions popover | Hover/focus/click/tap open it; Enter/Space and Escape work; no focus trap or mobile overflow; HTML/Markdown stay plain text |
 | Hidden instructions and PayTo terms | Blank text/toggle off hides only instructions; configured terms remain separate for PayTo, open safely and are not shown for PayID-only |
@@ -295,6 +298,7 @@ checks.
 - [ ] Payment-before-order abandonment/refund runbook staffed.
 - [ ] Native help descriptions inspected in your tenant's Admin UI.
 - [ ] Merchant PayTo terms URL supplied, or hosted merchant terms confirmed with Azupay; tooltip text is not a substitute for terms acceptance.
+- [ ] Hosted merchant identity/logo confirmed with Azupay for each client profile; Adobe Council is the requested identity for that installation, not proof it has been changed. Review saved title/byline/instructions for old provider attribution.
 - [ ] Required Commerce webhook authenticated and impossible to bypass.
 - [ ] Invoice scheduler tested, monitored and within volume/time limits.
 - [ ] No secrets in Git, storefront assets, error output, URLs or analytics.

@@ -75,7 +75,8 @@ function fixture({ disabledTrigger = false } = {}) {
   });
   const dialog = doc.body.children[0];
   const [heading, message, controls, frame] = dialog.children;
-  const [close, check, redirect] = controls.children;
+  const [close, help] = controls.children;
+  const [check, redirect] = help.children[2].children;
   return {
     promise,
     host,
@@ -87,6 +88,7 @@ function fixture({ disabledTrigger = false } = {}) {
     close,
     check,
     redirect,
+    help,
     timers,
     redirects,
     trigger,
@@ -114,7 +116,12 @@ describe("accessible hosted payment modal", () => {
     assert.equal(url.searchParams.get("type"), "iframe");
     assert.equal(url.searchParams.has("redirectURL"), false);
     assert.equal(url.searchParams.get("token"), "public");
-    assert.equal(f.frame.title, "Azupay secure bank payment");
+    assert.equal(f.frame.title, "Secure bank payment");
+    assert.equal(f.heading.textContent, "Pay securely from your bank account");
+    assert.equal(f.heading.style.fontSize, "1.25rem");
+    assert.equal(f.help.open, false);
+    assert.match(f.help.children[0].textContent, /Need help/);
+    assert.match(f.help.children[1].textContent, /does not charge you again/);
     assert.equal(f.dialog.attributes["aria-labelledby"], f.heading.id);
     assert.equal(f.dialog.open, true);
     assert.equal(f.doc.body.style.overflow, "hidden");
@@ -137,6 +144,17 @@ describe("accessible hosted payment modal", () => {
     f.messageEvent("https://pay.example", {}, payload);
     f.messageEvent("https://pay.example", f.frame.contentWindow, {
       EventType: "UserInterface",
+    });
+    it("closes on Escape from the help controls without relying on a native cancel event", async () => {
+      const f = fixture();
+      f.help.open = true;
+      const escape = new Event("keydown", { cancelable: true });
+      Object.assign(escape, { key: "Escape" });
+      f.dialog.dispatchEvent(escape);
+      assert.equal(escape.defaultPrevented, true);
+      assert.deepEqual(await f.promise, { paid: false, redirected: false });
+      assert.equal(f.trigger.focused, true);
+      assert.equal(f.timers.size, 0);
     });
     assert.equal(f.checks(), 0);
     f.messageEvent("https://pay.example", f.frame.contentWindow, payload);
@@ -162,6 +180,7 @@ describe("accessible hosted payment modal", () => {
     assert.equal(f.checks(), 60);
     assert.equal(f.timers.size, 0);
     assert.match(f.message.textContent, /Automatic checks have paused/);
+    assert.equal(f.help.open, true);
     f.paid();
     f.check.click();
     assert.deepEqual(await f.promise, { paid: true, redirected: false });
@@ -190,9 +209,10 @@ describe("accessible hosted payment modal", () => {
     assert.equal(f.dialog.open, true);
     assert.equal(f.message.attributes.role, "alert");
     assert.match(f.message.textContent, /verification is unavailable/);
+    assert.equal(f.help.open, true);
     assert.equal(f.timers.size, 0);
     f.frame.dispatchEvent(new Event("error"));
-    assert.match(f.message.textContent, /Continue in full page/);
+    assert.match(f.message.textContent, /Open payment in full page/);
     f.close.click();
     assert.deepEqual(await f.promise, { paid: false, redirected: false });
     assert.deepEqual(logged, [
@@ -243,7 +263,9 @@ describe("accessible hosted payment modal", () => {
     const dialog = doc.body.children[0];
     assert.equal(dialog.children[3].hidden, true);
     assert.match(dialog.children[1].textContent, /cannot open an embedded/);
-    dialog.children[2].children[2].click();
+    const help = dialog.children[2].children[1];
+    assert.equal(help.open, true);
+    help.children[2].children[1].click();
     assert.deepEqual(await result, { paid: false, redirected: true });
     assert.deepEqual(redirects, ["https://pay.example/same-session"]);
   });

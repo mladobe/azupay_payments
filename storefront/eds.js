@@ -10,6 +10,7 @@ export { hasPendingPayment };
 
 const brandingByCart = new Map();
 const configuredTransports = new WeakSet();
+const brandingListeners = new Set();
 
 function validateBranding(value) {
   if (
@@ -18,6 +19,8 @@ function validateBranding(value) {
     value.title.length > 100 ||
     typeof value.byline !== "string" ||
     value.byline.length > 250 ||
+    (value.badge !== undefined &&
+      (typeof value.badge !== "string" || value.badge.length > 32)) ||
     !Array.isArray(value.logos) ||
     value.logos.length > 3
   )
@@ -128,6 +131,7 @@ export function setupAzupayBranding(transport, { fetcher = fetch } = {}) {
           }
           const branding = await settings.get(key);
           brandingByCart.set(value.id, branding);
+          for (const listener of brandingListeners) listener();
           return {
             ...value,
             available_payment_methods: value.available_payment_methods.map(
@@ -149,6 +153,7 @@ export function setupAzupayBranding(transport, { fetcher = fetch } = {}) {
           // Branding is cosmetic: report it visibly without disabling other payment methods.
           console.error("[azupay] CHECKOUT_BRANDING_UNAVAILABLE");
           brandingByCart.set(value.id, { error: true });
+          for (const listener of brandingListeners) listener();
           return value;
         }
       }
@@ -169,13 +174,13 @@ export function setupAzupayBranding(transport, { fetcher = fetch } = {}) {
 export function paymentActionBase(methods) {
   const matches = methods?.filter((method) => method.code === "azupay");
   if (matches?.length !== 1)
-    throw new Error("Azupay is not available for this cart.");
+    throw new Error("Pay by Bank is not available for this cart.");
   const config = matches[0].oope_payment_method_config;
   const entries = config?.custom_config?.filter(
     (entry) => entry.key === "action_base_url",
   );
   if (entries?.length !== 1 || typeof entries[0].value !== "string")
-    throw new Error("Azupay action_base_url is missing or ambiguous.");
+    throw new Error("Bank payment endpoint is missing or ambiguous.");
   const base = new URL(entries[0].value);
   if (
     base.protocol !== "https:" ||
@@ -184,12 +189,12 @@ export function paymentActionBase(methods) {
     base.search ||
     base.hash
   )
-    throw new Error("Azupay requires an HTTPS action base URL.");
+    throw new Error("Bank payment requires an HTTPS action base URL.");
   if (
     config.backend_integration_url !==
     `${base.href.replace(/\/$/, "")}/create-session`
   )
-    throw new Error("Azupay payment endpoint configuration does not match.");
+    throw new Error("Bank payment endpoint configuration does not match.");
   return base.href.replace(/\/$/, "");
 }
 
@@ -211,7 +216,7 @@ async function getActionBase(graphql, cartId) {
     { cartId },
   );
   if (response.errors?.length || !response.data?.cart)
-    throw new Error("Could not read Azupay configuration for this cart.");
+    throw new Error("Could not read bank payment configuration for this cart.");
   return paymentActionBase(response.data.cart.available_payment_methods);
 }
 
@@ -301,6 +306,159 @@ function instructionPopover({ label, text }) {
   return details;
 }
 
+function paymentBadge(text) {
+  const badge = document.createElement("span");
+  badge.className = "azupay-payment-badge";
+  badge.textContent = text;
+  Object.assign(badge.style, {
+    display: "inline-block",
+    padding: "4px 10px",
+    borderRadius: "4px",
+    background: "#176b37",
+    color: "#fff",
+    fontSize: "0.875rem",
+    lineHeight: "1.5",
+    overflowWrap: "anywhere",
+  });
+  return badge;
+}
+
+function paymentLogos(values) {
+  const logos = document.createElement("span");
+  logos.className = "azupay-payment-logos";
+  Object.assign(logos.style, {
+    display: "inline-flex",
+    flexWrap: "wrap",
+    gap: "16px",
+    alignItems: "center",
+    justifyContent: "center",
+    maxWidth: "100%",
+  });
+  for (const logo of values) {
+    const image = document.createElement("img");
+    image.alt = logo.alt;
+    image.width = 100;
+    image.height = 48;
+    // Override storefront rules that otherwise expand images to intrinsic size.
+    Object.assign(image.style, {
+      width: "100px",
+      height: "48px",
+      maxWidth: "100%",
+      maxHeight: "48px",
+      minWidth: "0",
+      flex: "0 1 100px",
+      objectFit: "contain",
+    });
+    image.referrerPolicy = "no-referrer";
+    image.addEventListener(
+      "error",
+      () => {
+        console.error("[azupay] CHECKOUT_LOGO_UNAVAILABLE");
+        const warning = document.createElement("span");
+        warning.setAttribute("role", "status");
+        warning.textContent = `${logo.alt} image unavailable.`;
+        image.replaceWith(warning);
+      },
+      { once: true },
+    );
+    image.src = logo.url;
+    logos.append(image);
+  }
+  return logos;
+}
+
+// Drop-in 3.x has no rich-label slot. Enhance only its existing bank radio label.
+export function withAzupaySelector(render, getCartId) {
+  return async (container) => {
+    let decoration;
+    let previousBranding;
+    let stopped = false;
+    function update() {
+      if (stopped) return;
+      const branding = brandingByCart.get(getCartId());
+      const radio = container.querySelector(
+        'input[type="radio"][name="payment-method"][value="azupay"]',
+      );
+      let label = radio?.closest("label");
+      // ToggleButton nests the radio's own label inside the full method label.
+      let enclosing = label?.parentElement?.closest("label");
+      while (enclosing && container.contains(enclosing)) {
+        label = enclosing;
+        enclosing = label.parentElement?.closest("label");
+      }
+      if (!branding || branding.error || !label) {
+        decoration?.remove();
+        decoration = undefined;
+        container.removeAttribute("data-azupay-selector-enhanced");
+        return;
+      }
+      if (decoration?.parentElement === label && branding === previousBranding)
+        return;
+      decoration?.remove();
+      previousBranding = branding;
+      decoration = document.createElement("span");
+      decoration.className = "azupay-selector-display";
+      Object.assign(decoration.style, {
+        display: "inline-flex",
+        flexWrap: "wrap",
+        alignItems: "center",
+        justifyContent: "center",
+        gap: "8px 12px",
+        maxWidth: "100%",
+        minWidth: "0",
+        margin: "8px 0 0 32px",
+      });
+      const style = document.createElement("style");
+      style.textContent = `
+        [data-azupay-selector-enhanced] .azupay-payment-details > .azupay-payment-logos,
+        [data-azupay-selector-enhanced] .azupay-payment-details > .azupay-payment-byline,
+        [data-azupay-selector-enhanced] .azupay-payment-details > .azupay-payment-badge { display: none !important; }
+      `;
+      decoration.append(style);
+      if (branding.byline) {
+        const byline = document.createElement("span");
+        byline.textContent = branding.byline;
+        Object.assign(byline.style, {
+          flexBasis: "100%",
+          textAlign: "center",
+          fontSize: "0.875rem",
+          fontWeight: "normal",
+        });
+        decoration.append(byline);
+      }
+      if (branding.logos.length)
+        decoration.append(paymentLogos(branding.logos));
+      if (branding.badge?.trim())
+        decoration.append(paymentBadge(branding.badge));
+      label.append(decoration);
+      container.setAttribute("data-azupay-selector-enhanced", "");
+    }
+    const observer = new MutationObserver(update);
+    observer.observe(container, { childList: true, subtree: true });
+    brandingListeners.add(update);
+    function cleanup() {
+      stopped = true;
+      observer.disconnect();
+      brandingListeners.delete(update);
+      decoration?.remove();
+      container.removeAttribute("data-azupay-selector-enhanced");
+    }
+    try {
+      const api = await render(container);
+      update();
+      const remove = api.remove.bind(api);
+      api.remove = (...args) => {
+        cleanup();
+        return remove(...args);
+      };
+      return api;
+    } catch (error) {
+      cleanup();
+      throw error;
+    }
+  };
+}
+
 export const azupayPaymentSlot = {
   render(ctx) {
     const container = document.createElement("div");
@@ -315,48 +473,12 @@ export const azupayPaymentSlot = {
     }
     if (branding?.byline) {
       const byline = document.createElement("p");
+      byline.className = "azupay-payment-byline";
       byline.textContent = branding.byline;
       container.append(byline);
     }
-    if (branding?.logos?.length) {
-      const logos = document.createElement("div");
-      logos.className = "azupay-payment-logos";
-      logos.style.display = "flex";
-      logos.style.flexWrap = "wrap";
-      logos.style.gap = "16px";
-      logos.style.alignItems = "center";
-      for (const logo of branding.logos) {
-        const image = document.createElement("img");
-        image.alt = logo.alt;
-        image.width = 100;
-        image.height = 48;
-        // CSS dimensions must override storefront rules such as main img { width: auto; height: auto; }.
-        Object.assign(image.style, {
-          width: "100px",
-          height: "48px",
-          maxWidth: "100%",
-          maxHeight: "48px",
-          minWidth: "0",
-          flex: "0 1 100px",
-          objectFit: "contain",
-        });
-        image.referrerPolicy = "no-referrer";
-        image.addEventListener(
-          "error",
-          () => {
-            console.error("[azupay] CHECKOUT_LOGO_UNAVAILABLE");
-            const warning = document.createElement("span");
-            warning.setAttribute("role", "status");
-            warning.textContent = `${logo.alt} image unavailable.`;
-            image.replaceWith(warning);
-          },
-          { once: true },
-        );
-        image.src = logo.url;
-        logos.append(image);
-      }
-      container.append(logos);
-    }
+    if (branding?.logos?.length) container.append(paymentLogos(branding.logos));
+    if (branding?.badge?.trim()) container.append(paymentBadge(branding.badge));
     const guidance = branding?.guidance;
     const tooltip = guidance?.tooltip ?? {
       label: DEFAULT_INSTRUCTIONS_LABEL,
@@ -389,7 +511,7 @@ export const azupayPaymentSlot = {
     message.setAttribute("role", "status");
     message.textContent = hasPendingPayment()
       ? "Your bank payment session is saved. Review your details and select Complete your order below. We'll verify your existing payment without creating another bank payment."
-      : "Continue to Azupay to pay securely by bank. Your order is placed after payment is verified.";
+      : "Pay securely from your bank account. After payment is verified, select Complete your order to finish.";
     container.append(message);
     ctx.replaceHTML(container);
   },
@@ -397,9 +519,7 @@ export const azupayPaymentSlot = {
 
 export function azupayButtonLabel(storage = sessionStorage, label) {
   if (label) label.dataset.azupayOrderLabel = "";
-  return hasPendingPayment(storage)
-    ? "Complete your order"
-    : "Continue to Azupay";
+  return hasPendingPayment(storage) ? "Complete your order" : "Pay by Bank";
 }
 
 export function guardAzupayPlaceOrder(
@@ -432,19 +552,19 @@ export function guardAzupayPlaceOrder(
   };
   return async (request) => {
     if (running)
-      throw new Error("An Azupay payment check is already in progress.");
+      throw new Error("A bank payment check is already in progress.");
     if (request.code !== "azupay" && !hasPendingPayment(storage))
       return placeOrder(request);
     if (request.code !== "azupay") {
       const error = new Error(
-        "An Azupay payment is outstanding. Select Azupay and check it before using another payment method. Do not pay again.",
+        "A bank payment is outstanding. Select the bank payment method and check it before using another payment method. Do not pay again.",
       );
       showStatus(error.message, true);
       throw error;
     }
     if (purchaseOrder()) {
       const error = new Error(
-        "Azupay requires standard synchronous checkout, not B2B purchase-order approval.",
+        "Bank payment requires standard synchronous checkout, not B2B purchase-order approval.",
       );
       showStatus(error.message, true);
       throw error;
@@ -452,7 +572,7 @@ export function guardAzupayPlaceOrder(
     running = true;
     try {
       lockCart(true);
-      showStatus("Preparing secure Azupay checkout...");
+      showStatus("Preparing secure bank payment...");
       const flow = hostedCheckout({
         actionBaseUrl: await getActionBase(graphql, request.cartId),
         cartId: request.cartId,
@@ -498,7 +618,7 @@ export function guardAzupayPlaceOrder(
         );
       else if (result.status === "WAITING" && !result.redirected)
         showStatus(
-          "Your bank payment has not been confirmed yet. If you've paid, allow a little time, then select Complete your order again. This only checks your existing payment; it will not send you back to Azupay or request another payment.",
+          "Your bank payment has not been confirmed yet. If you've paid, allow a little time, then select Complete your order again. This only checks your existing payment; it will not request another payment.",
         );
       return result;
     } catch (error) {

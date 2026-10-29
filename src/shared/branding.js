@@ -8,7 +8,7 @@ import { DEFAULT_CHECKOUT_TITLE } from "./identity.js";
 import { requireValue } from "./payment.js";
 
 export { DEFAULT_TITLE } from "./identity.js";
-export const DEFAULT_BYLINE = "Pay securely from your bank account.";
+export const DEFAULT_BYLINE = "Fast and secure";
 const OFFICIAL_LOGOS = {
   payid: {
     url: "https://firebasestorage.googleapis.com/v0/b/standards-site-beta.appspot.com/o/documents%2Fb2wlf9qkqnr%2Fjmu8y36dofl%2FPayID_wordmark-Black.png?alt=media&token=350d4df0-1bfb-4f10-ba59-ac6eccb09003",
@@ -64,6 +64,7 @@ export function brandingSettings(config) {
     250,
     "Checkout byline",
   );
+  const badge = text(config.checkoutBadge, "", 32, "Checkout badge");
   const methods =
     Array.isArray(config.methods) && config.methods.length === 1
       ? config.methods[0]
@@ -177,6 +178,7 @@ export function brandingSettings(config) {
   return {
     title,
     byline,
+    badge,
     logos,
     guidance: {
       methods: enabledMethods,

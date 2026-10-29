@@ -98,6 +98,8 @@ for (const customized of [false, true]) {
       assert.ok(source.includes("merchantGuard(handlePlaceOrder)"));
     const slots = await readFile(join(options.target, containersPath), "utf8");
     assert.match(slots, /azupay: azupayPaymentSlot/);
+    assert.match(slots, /withAzupaySelector\(CheckoutProvider.render/);
+    assert.match(slots, /\(\) => azupayGetCartDataFromCache\(\)\?\.id/);
     assert.match(slots, /existing: \{ render:/);
     assert.match(slots, /handleValidation: options.handleValidation/);
     assert.equal((await installEds(options)).status, "unchanged");
@@ -135,6 +137,17 @@ it("dry-run performs no writes", async (t) => {
     await readFile(join(options.target, initializerPath), "utf8"),
     initializer,
   );
+});
+it("reuses a merchant's existing namespace cart import for selector branding", async (t) => {
+  const options = await fixture(t);
+  await writeFile(
+    join(options.target, containersPath),
+    `import * as merchantCart from '@dropins/storefront-cart/api.js';\n${containers}`,
+  );
+  await installEds(options);
+  const source = await readFile(join(options.target, containersPath), "utf8");
+  assert.match(source, /\(\) => merchantCart.getCartDataFromCache\(\)\?\.id/);
+  assert.equal(source.match(/@dropins\/storefront-cart\/api.js/g).length, 1);
 });
 it("rejects unsupported or conflicting layouts before changing any files", async (t) => {
   for (const source of [
@@ -220,7 +233,17 @@ async function earlierRelease(options, version) {
     await writeFile(join(options.target, initializerPath), initializer);
   }
   const path = join(options.target, containersPath);
-  const installed = await readFile(path, "utf8");
+  const installed = (await readFile(path, "utf8"))
+    .replace("  withAzupaySelector,\n", "")
+    .replace(
+      "withAzupaySelector(CheckoutProvider.render(PaymentMethods,",
+      "CheckoutProvider.render(PaymentMethods,",
+    )
+    .replace(", () => azupayGetCartDataFromCache()?.id)", "")
+    .replace(
+      /import \{\n  getCartDataFromCache as azupayGetCartDataFromCache,\n\} from '@dropins\/storefront-cart\/api.js';\n?/,
+      "",
+    );
   const source = [
     "0.1.3",
     "0.1.4",
@@ -230,6 +253,7 @@ async function earlierRelease(options, version) {
     "0.1.8",
     "0.1.9",
     "0.1.10",
+    "0.1.11",
   ].includes(version)
     ? installed
     : installed.replace(
@@ -256,6 +280,7 @@ for (const version of [
   "0.1.8",
   "0.1.9",
   "0.1.10",
+  "0.1.11",
 ]) {
   it(`explicitly upgrades ${version} without rewriting merchant checkout`, async (t) => {
     const options = await fixture(t);
@@ -299,7 +324,15 @@ for (const version of [
   });
 }
 
-for (const version of ["0.1.5", "0.1.6", "0.1.7", "0.1.8", "0.1.9", "0.1.10"]) {
+for (const version of [
+  "0.1.5",
+  "0.1.6",
+  "0.1.7",
+  "0.1.8",
+  "0.1.9",
+  "0.1.10",
+  "0.1.11",
+]) {
   it(`upgrades unchanged ${version} assets without adding a second button registration`, async (t) => {
     const options = await fixture(t);
     await installEds(options);
@@ -324,10 +357,17 @@ for (const version of ["0.1.5", "0.1.6", "0.1.7", "0.1.8", "0.1.9", "0.1.10"]) {
         "scripts/azupay/client.js",
       ].map((path) => readFile(join(options.target, path), "utf8")),
     );
-    assert.deepEqual(after, before);
+    assert.deepEqual(
+      [after[0], after[2], after[3]],
+      [before[0], before[2], before[3]],
+    );
+    assert.equal(
+      after[1].match(/withAzupaySelector\(CheckoutProvider.render/g).length,
+      1,
+    );
     assert.equal(
       JSON.parse(await readFile(manifestPath, "utf8")).version,
-      "0.1.11",
+      "0.1.12",
     );
     assert.equal((await installEds(options)).status, "unchanged");
   });
