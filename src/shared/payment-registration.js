@@ -49,6 +49,21 @@ export function paymentStoreCodes(views) {
   return stores;
 }
 
+function registrationValue(response) {
+  const method =
+    response?.success === true
+      ? response.message
+      : response?.success === undefined
+        ? response
+        : null;
+  return method?.code === "azupay" &&
+    typeof method.active === "boolean" &&
+    Array.isArray(method.stores) &&
+    method.stores.every((code) => typeof code === "string")
+    ? method
+    : null;
+}
+
 async function readRegistration(client) {
   let response;
   try {
@@ -57,13 +72,9 @@ async function readRegistration(client) {
     if (error.response?.status === 404) return null;
     throw error;
   }
-  const method = response?.message;
+  const method = registrationValue(response);
   requireValue(
-    response?.success === true &&
-      method?.code === "azupay" &&
-      typeof method.active === "boolean" &&
-      Array.isArray(method.stores) &&
-      method.stores.every((code) => typeof code === "string"),
+    method !== null,
     "COMMERCE_INVALID_REGISTRATION",
     "Commerce returned an invalid Azupay payment registration.",
     502,
@@ -90,7 +101,7 @@ async function saveRegistration(client, method) {
     })
     .json();
   requireValue(
-    response?.success === true,
+    response?.success === true || registrationValue(response) !== null,
     "COMMERCE_REGISTRATION_FAILED",
     "Commerce did not confirm the Azupay payment registration. Retry synchronization to verify the saved registration.",
     502,

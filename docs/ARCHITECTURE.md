@@ -55,9 +55,12 @@ with the established AUD/Australia defaults. Authorization or other read failure
 never become a new default registration.
 
 Discovery must return a valid, nonempty, unambiguous active list. POST requires
-`success: true`, followed by GET verification of the saved stores/active state.
+`success: true` or a validated direct registration object, followed by GET
+verification of the saved stores/active state.
 Matching store lists are no-ops; inactive/deleted views are removed from the
-assignments. Installation and the introducing upgrade share this helper under
+assignments. Both the documented `success`/`message` response envelope and ACCS's
+direct payment-method response object are validated; neither an HTTP 200 alone
+nor an explicit failure response confirms a write. Installation and the introducing upgrade share this helper under
 the installation identity. The step has a new stable name because Adobe's
 append-only reconciliation runs added names, not edited scripts. Later upgrades
 do not rerun this unchanged step; admins use sync after adding store views.

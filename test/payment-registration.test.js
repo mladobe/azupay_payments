@@ -48,7 +48,9 @@ function fixture(options = {}) {
             error.response = { status: 404 };
             throw error;
           }
-          return { success: true, message: structuredClone(saved) };
+          return options.directResponse
+            ? structuredClone(saved)
+            : { success: true, message: structuredClone(saved) };
         },
       };
     },
@@ -61,7 +63,9 @@ function fixture(options = {}) {
           if (options.postResult) return options.postResult;
           if (!options.staleReadback)
             saved = structuredClone(json.payment_method);
-          return { success: true };
+          return options.directResponse
+            ? structuredClone(saved)
+            : { success: true };
         },
       };
     },
@@ -75,6 +79,36 @@ function fixture(options = {}) {
 }
 
 describe("dynamic OOPE payment-store registration", () => {
+  it("supports the direct GET/POST objects returned by ACCS and verifies readback", async () => {
+    const { register, calls } = fixture({ existing, directResponse: true });
+    assert.deepEqual(await register(), {
+      paymentMethod: "azupay",
+      active: false,
+      stores: ["b2b", "default"],
+      changed: true,
+    });
+    assert.equal(calls.at(-1).method, "get");
+    assert.equal((await register()).changed, false);
+    const stale = fixture({
+      existing,
+      directResponse: true,
+      staleReadback: true,
+    });
+    await assert.rejects(stale.register(), {
+      code: "COMMERCE_REGISTRATION_UNCONFIRMED",
+    });
+    const invalid = fixture({
+      existing: { ...existing, active: "false" },
+      directResponse: true,
+    });
+    await assert.rejects(invalid.register(), {
+      code: "COMMERCE_INVALID_REGISTRATION",
+    });
+    const failure = fixture({ postResult: { ...existing, success: false } });
+    await assert.rejects(failure.register(), {
+      code: "COMMERCE_REGISTRATION_FAILED",
+    });
+  });
   it("discovers all active storefront codes, not website/store IDs or only default", () => {
     assert.deepEqual(paymentStoreCodes(views), ["b2b", "default"]);
     assert.deepEqual(

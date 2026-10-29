@@ -15,6 +15,8 @@ The first public release is pending ownership/licence approval and acceptance.
   configuration, and leave all scoped payment settings unchanged. A missing
   registration is created with the existing AUD/Australia defaults.
 - Require valid live discovery, explicit API success and verified readback.
+  Accept validated direct ACCS registration objects as well as Adobe's documented
+  response envelope; verify the saved state in both cases.
   Treat combined scope/registration failures as unconfirmed, explain possible
   partial completion and allow idempotent retry. Uninstall deactivates the
   existing method without requiring store discovery.
