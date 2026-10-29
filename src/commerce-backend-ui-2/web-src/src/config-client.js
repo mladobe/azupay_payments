@@ -14,7 +14,7 @@ export function configClient({
   credentials,
   fetch: request = globalThis.fetch,
 }) {
-  async function call(path, { signal, ...options } = {}) {
+  async function call(path, { signal, timeout = 30000, ...options } = {}) {
     const { imsToken, imsOrgId } = credentials();
     if (!imsToken || !imsOrgId)
       throw new Error("Authenticated Commerce Admin context is required.");
@@ -31,8 +31,8 @@ export function configClient({
         credentials: "omit",
         redirect: "error",
         signal: signal
-          ? AbortSignal.any([signal, AbortSignal.timeout(30000)])
-          : AbortSignal.timeout(30000),
+          ? AbortSignal.any([signal, AbortSignal.timeout(timeout)])
+          : AbortSignal.timeout(timeout),
       });
     } catch (error) {
       if (signal?.aborted) throw error;
@@ -40,7 +40,9 @@ export function configClient({
         code: "ADMIN_CONFIG_NETWORK",
       });
       throw new Error(
-        "Configuration could not be reached. Reload saved values before retrying a save.",
+        path === "/scopes/sync"
+          ? "Commerce scope synchronization could not be reached or timed out. Retry Sync Commerce scopes to confirm the current hierarchy."
+          : "Configuration could not be reached. Reload saved values before retrying a save.",
       );
     }
     if (!response.ok) {
@@ -53,7 +55,9 @@ export function configClient({
           ? "Your admin session has expired. Sign in again and reload this page."
           : response.status === 403
             ? "Your Commerce role does not have permission to configure Azupay."
-            : `Configuration request failed (HTTP ${response.status}). Reload saved values before retrying a save.`,
+            : path === "/scopes/sync"
+              ? `Commerce scope synchronization failed (HTTP ${response.status}). Retry Sync Commerce scopes; existing settings have not been edited by this operation.`
+              : `Configuration request failed (HTTP ${response.status}). Reload saved values before retrying a save.`,
       );
     }
     try {
@@ -69,6 +73,8 @@ export function configClient({
   }
   return {
     scopes: (signal) => call("/scopes", { signal }),
+    syncScopes: (signal) =>
+      call("/scopes/sync", { method: "POST", signal, timeout: 75000 }),
     read: (scopeId, signal) =>
       call(`/config?scopeId=${encodeURIComponent(scopeId)}&commerceEnv=saas`, {
         signal,

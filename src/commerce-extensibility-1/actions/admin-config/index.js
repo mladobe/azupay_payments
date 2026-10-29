@@ -3,9 +3,13 @@ import {
   getAdminUiPermissionClient,
 } from "@adobe/aio-commerce-lib-admin-ui/api";
 import { getMenuAclResourceId } from "@adobe/aio-commerce-lib-admin-ui/menu";
-import { getCommerceClient } from "@adobe/aio-commerce-lib-app";
+import {
+  getCommerceClient,
+  getCommerceInstance,
+} from "@adobe/aio-commerce-lib-app";
 import { configRuntimeAction } from "@adobe/aio-commerce-lib-app/actions/config";
 import { scopeTreeRuntimeAction } from "@adobe/aio-commerce-lib-app/actions/scope-tree";
+import { syncCommerceScopes } from "@adobe/aio-commerce-lib-config";
 import { getForwardedImsAuthProvider } from "@adobe/aio-commerce-sdk/auth";
 import { adminConfigHandler } from "../../../shared/admin-config.js";
 import { configSchema } from "../../../shared/config-schema.js";
@@ -15,6 +19,8 @@ import { logError } from "../../../shared/runtime.js";
 export const main = adminConfigHandler({
   configAction: configRuntimeAction({ configSchema }),
   scopeAction: scopeTreeRuntimeAction,
+  getCommerceInstance,
+  syncScopes: syncCommerceScopes,
   logError,
   authorize: async (params) => {
     if (!/^Bearer \S+$/i.test(params.__ow_headers?.authorization ?? "")) {
@@ -42,5 +48,6 @@ export const main = adminConfigHandler({
         error.status = 401;
       throw error;
     }
+    return auth;
   },
 });

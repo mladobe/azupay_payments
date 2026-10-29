@@ -33,14 +33,14 @@ node dist/eds/bin/install.js --target /absolute/path/to/storefront --dry-run
 node dist/eds/bin/install.js --target /absolute/path/to/storefront
 ```
 
-For another merchant, distribute `dist/azupay-commerce-eds-0.1.12.tgz`.
+For another merchant, distribute `dist/azupay-commerce-eds-0.1.13.tgz`.
 This archive contains a self-contained Node installer, the browser bundle and
 this guide. It contains no Adobe/Azupay credentials and needs no additional
 runtime dependencies.
 
 ```sh
 mkdir azupay-eds-installer
-tar -xzf /path/to/azupay-commerce-eds-0.1.12.tgz -C azupay-eds-installer
+tar -xzf /path/to/azupay-commerce-eds-0.1.13.tgz -C azupay-eds-installer
 node azupay-eds-installer/package/bin/install.js \
   --target /absolute/path/to/storefront --dry-run
 node azupay-eds-installer/package/bin/install.js \
@@ -62,15 +62,15 @@ The installer:
 - Creates `.azupay-eds-installation.json` with release/content hashes. Repeating
   the same installer is a no-op. Edited installed files, unmanaged Azupay code,
   changed releases, symlinked targets and unsupported layouts fail explicitly.
-  The explicit `--upgrade` option supports reviewed releases 0.1.0 through 0.1.11
-  to 0.1.12 after verifying every installed file's hash.
+  The explicit `--upgrade` option supports reviewed releases 0.1.0 through 0.1.12
+  to 0.1.13 after verifying every installed file's hash.
 
 Preflight checks all planned edits before writing. Do not run concurrent
 installers or edit checkout files during installation. Keep the installation
 manifest with the source changes. For an upgrade, review both the merchant's
 checkout changes and the new release before replacing an installation.
 
-### Upgrade an unchanged 0.1.0 through 0.1.11 installation
+### Upgrade an unchanged 0.1.0 through 0.1.12 installation
 
 ```sh
 node dist/eds/bin/install.js --target /absolute/path/to/storefront --upgrade --dry-run
@@ -130,6 +130,10 @@ subscription are cleaned up on removal or failed rendering. Revalidate the
 drop-in's native radio/label contract on future Adobe upgrades. Details-slot
 branding remains available when the wrapper is not installed. Deploy the new
 schema/backend and publish all upgraded storefront files, not just the bundle.
+
+Version 0.1.13 adds scope synchronization to the admin editor only. The 0.1.12
+storefront browser bundle is unchanged, so no merchant reinstall or publication
+is needed for that fix. An optional installer upgrade updates its manifest.
 
 ## 3. Review, build and publish the merchant storefront
 

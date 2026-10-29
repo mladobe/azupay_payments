@@ -35,6 +35,17 @@ Adobe's library. The V2 Sales menu provides an embedded configuration editor and
 documentation tab inside Commerce Admin, reusing those native config/scope
 handlers and storage. There is no duplicate settings store.
 
+The editor reads the persisted scope tree; ordinary reads do not refresh it
+from Commerce, including after cache expiry. Explicit POST
+`azupay/admin-config/scopes/sync` requires the existing menu ACL and uses
+`syncCommerceScopes` with the associated Commerce base URL/flavor from
+`getCommerceInstance` and the signed-in admin's forwarded IMS auth. Caller
+target/auth overrides are not passed to sync. Commerce requests have bounded
+timeouts and no automatic retries. Cached fallback, error or empty results fail
+explicitly. A successful response updates the dropdown and reloads the selected
+scope's inherited settings, preserving selection by UUID where possible.
+Sync edits the scope hierarchy, not payment values or OOPE store registration.
+
 ## Checkout display contract
 
 `checkout-branding` accepts an exact-origin public POST with a Commerce

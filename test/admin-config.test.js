@@ -19,8 +19,16 @@ describe("permission-checked native configuration adapter", () => {
       __ow_path: "/scopes",
     });
     assert.equal(response.statusCode, 401);
+    assert.equal(
+      (await adminMain({ __ow_method: "post", __ow_path: "/scopes/sync" }))
+        .statusCode,
+      401,
+    );
   });
-  function fixture(authorize = async () => {}) {
+  function fixture(
+    authorize = async () => ({ kind: "forwarded-admin" }),
+    syncResult = { synced: true, scopeTree: [{ id: "fresh-scope" }] },
+  ) {
     const calls = [],
       logs = [];
     const main = adminConfigHandler({
@@ -32,6 +40,15 @@ describe("permission-checked native configuration adapter", () => {
       scopeAction: async (params) => {
         calls.push(params);
         return { statusCode: 203, body: { scopes: [] } };
+      },
+      getCommerceInstance: async () => {
+        calls.push({ operation: "instance" });
+        return { baseUrl: "https://associated.example/tenant", env: "saas" };
+      },
+      syncScopes: async (config) => {
+        calls.push({ operation: "sync", config });
+        if (syncResult instanceof Error) throw syncResult;
+        return syncResult;
       },
       logError: (code) => logs.push(code),
     });
@@ -71,6 +88,76 @@ describe("permission-checked native configuration adapter", () => {
     );
   });
 
+  it("synchronizes fresh scopes only after authorization, using the stored instance and signed-in auth", async () => {
+    let authorized = false;
+    const auth = { kind: "signed-in-provider" };
+    const { main, calls } = fixture(async () => {
+      authorized = true;
+      return auth;
+    });
+    const response = await main({
+      __ow_method: "post",
+      __ow_path: "/scopes/sync",
+      commerceBaseUrl: "https://attacker.example",
+      commerceEnv: "paas",
+      AIO_COMMERCE_API_BASE_URL: "https://attacker.example",
+      auth: { kind: "caller" },
+    });
+    assert.equal(authorized, true);
+    assert.equal(response.statusCode, 200);
+    assert.equal(response.headers["cache-control"], "no-store");
+    assert.deepEqual(response.body, {
+      scopes: [{ id: "fresh-scope" }],
+      synced: true,
+    });
+    assert.deepEqual(calls, [
+      { operation: "instance" },
+      {
+        operation: "sync",
+        config: {
+          auth,
+          config: {
+            baseUrl: "https://associated.example/tenant",
+            flavor: "saas",
+          },
+          fetchOptions: { timeout: 20000, retry: 0 },
+        },
+      },
+    ]);
+  });
+
+  it("rejects cached, empty and failed syncs explicitly without leaking provider failures", async () => {
+    for (const result of [
+      { synced: false, scopeTree: [{ id: "old-scope" }] },
+      { synced: true, scopeTree: [], error: "Private upstream detail" },
+      { synced: true, scopeTree: [] },
+      new Error("Private upstream detail"),
+    ]) {
+      const { main, logs } = fixture(undefined, result);
+      const response = await main({
+        __ow_method: "post",
+        __ow_path: "/scopes/sync",
+      });
+      assert.equal(response.statusCode, 503);
+      assert.match(
+        response.body.message,
+        /synchronization could not be confirmed/,
+      );
+      assert.doesNotMatch(JSON.stringify(response), /Private upstream/);
+      assert.deepEqual(logs, ["ADMIN_CONFIG_UNAVAILABLE"]);
+    }
+  });
+
+  it("does not synchronize with deployment credentials when forwarded auth is unavailable", async () => {
+    const { main, calls } = fixture(async () => undefined);
+    const response = await main({
+      __ow_method: "post",
+      __ow_path: "/scopes/sync",
+    });
+    assert.equal(response.statusCode, 401);
+    assert.deepEqual(calls, []);
+  });
+
   it("never reads or writes configuration when user authorization fails", async () => {
     for (const status of [401, 403, 500]) {
       const { main, calls, logs } = fixture(async () => {
@@ -80,11 +167,16 @@ describe("permission-checked native configuration adapter", () => {
         error.status = status;
         throw error;
       });
-      const result = await main({ __ow_method: "patch", __ow_path: "/config" });
-      assert.equal(result.statusCode, status === 500 ? 503 : status);
-      assert.deepEqual(calls, []);
-      assert.equal(logs.length, 1);
-      assert.ok(!JSON.stringify(result).includes("Private upstream"));
+      for (const [method, path] of [
+        ["patch", "/config"],
+        ["post", "/scopes/sync"],
+      ]) {
+        const result = await main({ __ow_method: method, __ow_path: path });
+        assert.equal(result.statusCode, status === 500 ? 503 : status);
+        assert.deepEqual(calls, []);
+        assert.ok(!JSON.stringify(result).includes("Private upstream"));
+      }
+      assert.equal(logs.length, 2);
     }
   });
 
@@ -92,6 +184,9 @@ describe("permission-checked native configuration adapter", () => {
     for (const [method, path] of [
       ["put", "/scopes"],
       ["post", "/scopes/commerce"],
+      ["get", "/scopes/sync"],
+      ["put", "/scopes/sync"],
+      ["delete", "/scopes/sync"],
       ["delete", "/config"],
       ["get", "/"],
     ]) {
@@ -180,6 +275,13 @@ describe("admin configuration browser client", () => {
       { name: "enabled", value: false },
       { name: "checkoutTitle", value: null },
     ]);
+    await client.syncScopes();
+    assert.equal(
+      calls[3].url,
+      "https://runtime.example/admin-config/scopes/sync",
+    );
+    assert.equal(calls[3].method, "POST");
+    assert.equal(calls[3].body, undefined);
     assert.equal(calls[0].headers.Authorization, "Bearer first-admin-token");
     assert.equal(
       calls[1].headers.Authorization,
@@ -250,7 +352,7 @@ describe("admin configuration browser client", () => {
   });
 
   it("propagates cancellation to reads and saves without retrying stale requests", async () => {
-    for (const operation of ["read", "save"]) {
+    for (const operation of ["read", "save", "syncScopes"]) {
       const controller = new AbortController();
       let calls = 0;
       const client = configClient({
@@ -268,7 +370,9 @@ describe("admin configuration browser client", () => {
       const pending =
         operation === "read"
           ? client.read("global", controller.signal)
-          : client.save("global", [], controller.signal);
+          : operation === "save"
+            ? client.save("global", [], controller.signal)
+            : client.syncScopes(controller.signal);
       controller.abort();
       await assert.rejects(pending, { name: "AbortError" });
       assert.equal(calls, 1);

@@ -4,6 +4,20 @@ Changes are grouped by implementation version. These entries describe local
 development history, not previously published GitHub releases or certification.
 The first public release is pending ownership/licence approval and acceptance.
 
+## 0.1.13
+
+- Add **Sync Commerce scopes** to the embedded Sales-menu configuration editor.
+  Fetch fresh websites, stores and store views using Adobe's scope-sync library,
+  the stored Commerce association and the signed-in admin's menu permission.
+  Do not accept browser-supplied targets or technical-account auth fallback.
+- Update the dropdown and reload settings, preserving selection and inherited
+  values. Block sync during edits, saves or ambiguous-save recovery; report
+  cached fallback and failures explicitly rather than claiming success.
+- Clarify that Reload configuration reads settings only and that the separate
+  generic App Management page need not offer scope synchronization.
+- No storefront browser changes. Existing 0.1.12 storefronts do not need an
+  update; optional reviewed installer upgrades through 0.1.12 update the manifest.
+
 ## 0.1.12
 
 - Apply Azupay UX feedback: white-label shopper messages and payment modal;

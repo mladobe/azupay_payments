@@ -99,6 +99,12 @@ export function AdminPage({ connected, client = null, connectionError = "" }) {
             needed, then save.
           </p>
           <ul>
+            <li>
+              After adding a website, store or store view, save or discard
+              drafts and select <strong>Sync Commerce scopes</strong> in the
+              Configuration tab. Reload configuration reads saved values only;
+              sync does not register payment methods for new store views.
+            </li>
             <li>Enable Azupay and select Staging / UAT or Production.</li>
             <li>
               Select your provisioned PayID, PayTo or both credential profile.

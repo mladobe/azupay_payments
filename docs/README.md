@@ -174,7 +174,10 @@ Never deploy the repository's GitHub CI job directly into a production tenant.
 2. Associate the deployed Azupay application with the intended Commerce instance.
 3. Install it and complete its payment-method and webhook registration steps.
 4. Confirm **Installed**, not **Partially Installed**.
-5. Sync Commerce scopes if needed and inspect the effective storefront store view.
+5. In **Sales > Azupay Real Time Payments > Configuration**, select
+   **Sync Commerce scopes** if needed, then inspect the effective storefront store
+   view. Save or discard drafts first. This button requires version 0.1.13;
+   **Reload configuration** only rereads settings, not the Commerce hierarchy.
 6. Verify all three installed webhook subscriptions and Adobe authentication.
    Settlement validation must remain required; forged receipts must fail.
 
@@ -278,7 +281,7 @@ display. The 0.1.11 schema/admin cleanup does not change that browser bundle or
 require a reinstall. Older bundles need the reviewed upgrade for the popover;
 Version 0.1.12 does require upgrading and publishing the storefront for
 white-label copy, selector branding and simplified modal controls;
-see [storefront version compatibility](STOREFRONT.md#upgrade-an-unchanged-010-through-0111-installation).
+see [storefront version compatibility](STOREFRONT.md#upgrade-an-unchanged-010-through-0112-installation).
 
 **App Builder deployment does not publish the merchant's storefront.** The normal
 EDS installation returns to the same checkout path; no new CMS return page is
@@ -341,6 +344,7 @@ surfaces. Restore only a compatible, previously verified revision. See
 | A paid order remains pending | Effective autoInvoice scope, actual five-minute timer/rule, reconciliation failures and existing invoices |
 | Modal is blank or a bank handoff fails | CSP/browser/provider restrictions; use Need help with your payment? > Open payment in full page for the same payment |
 | Branding has not changed | Save an explicit override and reload checkout; verify the new storefront bundle was published |
+| New website/store view missing from Active scope | Save/discard drafts and use Sync Commerce scopes in the Sales-menu editor (0.1.13+). Reload configuration and browser refresh do not synchronize Commerce. A sync failure must be resolved, not treated as an empty successful result. |
 | Retired education/approval fields still appear | Reload the admin page and verify the deployed configuration schema/admin version is 0.1.11 or newer |
 | Tooltip is absent | Check effective scope, Show payment instructions tooltip, nonblank instruction text and a 0.1.10-or-newer storefront |
 | Payment is complete but no order exists | Stop; do not pay again. Use the paid-cart recovery runbook |

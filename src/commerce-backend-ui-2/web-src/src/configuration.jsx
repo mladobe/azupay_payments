@@ -121,10 +121,11 @@ export function Configuration({ client }) {
   const [phase, setPhase] = useState("loading");
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
+  const [syncNotice, setSyncNotice] = useState("");
   const [reload, setReload] = useState(0);
   const [scopeReload, setScopeReload] = useState(0);
   const [needsReload, setNeedsReload] = useState(false);
-  const activeSave = useRef(null);
+  const activeRequest = useRef(null);
   const scope = scopes.find((item) => item.id === scopeId);
   const effective = Object.fromEntries(
     (fields ?? []).map((field) => [
@@ -137,9 +138,9 @@ export function Configuration({ client }) {
   const guidanceWarnings = fields ? checkoutGuidanceWarnings(effective) : [];
   const patch = fields ? configurationPatch(fields, draft) : [];
   const dirty = patch.length > 0;
-  const busy = phase === "loading" || phase === "saving";
+  const busy = ["loading", "saving", "syncing"].includes(phase);
 
-  useEffect(() => () => activeSave.current?.abort(), [client, scopeId]);
+  useEffect(() => () => activeRequest.current?.abort(), [client, scopeId]);
 
   useEffect(() => {
     if (!client) return;
@@ -153,14 +154,7 @@ export function Configuration({ client }) {
     async function loadScopes() {
       try {
         const result = await client.scopes(controller.signal);
-        const options = flattenScopes(result.scopes);
-        if (
-          !options.length ||
-          new Set(options.map((item) => item.id)).size !== options.length
-        )
-          throw new Error(
-            "The app has no valid configuration scopes. Sync Commerce scopes in App Management.",
-          );
+        const options = scopeOptions(result);
         if (controller.signal.aborted) return;
         setScopes(options);
         setScopeId(
@@ -175,6 +169,52 @@ export function Configuration({ client }) {
     loadScopes();
     return () => controller.abort();
   }, [client, scopeReload]);
+
+  function scopeOptions(result) {
+    const options = flattenScopes(result.scopes);
+    if (
+      !options.length ||
+      new Set(options.map((item) => item.id)).size !== options.length
+    )
+      throw new Error(
+        "The app has no valid configuration scopes. Select Sync Commerce scopes to fetch the current Commerce hierarchy.",
+      );
+    return options;
+  }
+
+  async function syncScopes() {
+    if (busy || dirty || needsReload) return;
+    const controller = new AbortController();
+    activeRequest.current = controller;
+    setPhase("syncing");
+    setError("");
+    setNotice("");
+    setSyncNotice("");
+    try {
+      const result = await client.syncScopes(controller.signal);
+      if (controller.signal.aborted) return;
+      if (result.synced !== true)
+        throw new Error(
+          "Commerce returned cached scopes, not a confirmed synchronization. Retry Sync Commerce scopes.",
+        );
+      const options = scopeOptions(result);
+      const selected =
+        options.find((item) => item.id === scopeId) ??
+        options.find((item) => item.level === "global") ??
+        options[0];
+      setScopes(options);
+      setScopeId(selected.id);
+      setSyncNotice(
+        "Commerce scopes synchronized. Existing payment settings were not edited. New scopes inherit their parent settings; review them before enabling checkout.",
+      );
+    } catch (failure) {
+      if (controller.signal.aborted) return;
+      setError(failure.message);
+      setPhase("error");
+    } finally {
+      if (activeRequest.current === controller) activeRequest.current = null;
+    }
+  }
 
   async function readFields(selected, signal) {
     const [document, parent] = await Promise.all([
@@ -248,7 +288,7 @@ export function Configuration({ client }) {
     setNotice("");
     let accepted = false;
     const controller = new AbortController();
-    activeSave.current = controller;
+    activeRequest.current = controller;
     try {
       await client.save(scope.id, patch, controller.signal);
       accepted = true;
@@ -272,7 +312,7 @@ export function Configuration({ client }) {
       }
       setPhase("error");
     } finally {
-      if (activeSave.current === controller) activeSave.current = null;
+      if (activeRequest.current === controller) activeRequest.current = null;
     }
   }
 
@@ -307,6 +347,7 @@ export function Configuration({ client }) {
           {notice}
         </p>
       )}
+      {syncNotice && <p role="status">{syncNotice}</p>}
       <div className="configuration-toolbar">
         <label htmlFor="configuration-scope">Active scope</label>
         <select
@@ -335,12 +376,30 @@ export function Configuration({ client }) {
         >
           Reload configuration
         </button>
+        <button
+          type="button"
+          disabled={busy || dirty || needsReload}
+          onClick={() => void syncScopes()}
+        >
+          {phase === "syncing"
+            ? "Syncing Commerce scopes..."
+            : "Sync Commerce scopes"}
+        </button>
       </div>
+      <p className="field-help">
+        Added a website, store or store view? Save or discard changes, then
+        select Sync Commerce scopes to fetch the current hierarchy from your
+        associated Commerce instance. Reload configuration reads saved values
+        for the selected scope only. Sync does not register payment methods for
+        additional store views.
+      </p>
       {busy && (
         <p role="status">
           {phase === "saving"
             ? "Saving and verifying configuration..."
-            : "Loading configuration..."}
+            : phase === "syncing"
+              ? "Fetching current websites, stores and store views from Commerce..."
+              : "Loading configuration..."}
         </p>
       )}
       {scope && !scope.is_editable && (

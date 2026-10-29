@@ -233,17 +233,21 @@ async function earlierRelease(options, version) {
     await writeFile(join(options.target, initializerPath), initializer);
   }
   const path = join(options.target, containersPath);
-  const installed = (await readFile(path, "utf8"))
-    .replace("  withAzupaySelector,\n", "")
-    .replace(
-      "withAzupaySelector(CheckoutProvider.render(PaymentMethods,",
-      "CheckoutProvider.render(PaymentMethods,",
-    )
-    .replace(", () => azupayGetCartDataFromCache()?.id)", "")
-    .replace(
-      /import \{\n  getCartDataFromCache as azupayGetCartDataFromCache,\n\} from '@dropins\/storefront-cart\/api.js';\n?/,
-      "",
-    );
+  const current = await readFile(path, "utf8");
+  const installed =
+    version === "0.1.12"
+      ? current
+      : current
+          .replace("  withAzupaySelector,\n", "")
+          .replace(
+            "withAzupaySelector(CheckoutProvider.render(PaymentMethods,",
+            "CheckoutProvider.render(PaymentMethods,",
+          )
+          .replace(", () => azupayGetCartDataFromCache()?.id)", "")
+          .replace(
+            /import \{\n  getCartDataFromCache as azupayGetCartDataFromCache,\n\} from '@dropins\/storefront-cart\/api.js';\n?/,
+            "",
+          );
   const source = [
     "0.1.3",
     "0.1.4",
@@ -254,6 +258,7 @@ async function earlierRelease(options, version) {
     "0.1.9",
     "0.1.10",
     "0.1.11",
+    "0.1.12",
   ].includes(version)
     ? installed
     : installed.replace(
@@ -281,6 +286,7 @@ for (const version of [
   "0.1.9",
   "0.1.10",
   "0.1.11",
+  "0.1.12",
 ]) {
   it(`explicitly upgrades ${version} without rewriting merchant checkout`, async (t) => {
     const options = await fixture(t);
@@ -332,6 +338,7 @@ for (const version of [
   "0.1.9",
   "0.1.10",
   "0.1.11",
+  "0.1.12",
 ]) {
   it(`upgrades unchanged ${version} assets without adding a second button registration`, async (t) => {
     const options = await fixture(t);
@@ -367,7 +374,7 @@ for (const version of [
     );
     assert.equal(
       JSON.parse(await readFile(manifestPath, "utf8")).version,
-      "0.1.12",
+      "0.1.13",
     );
     assert.equal((await installEds(options)).status, "unchanged");
   });

@@ -58,11 +58,44 @@ draft. Save or discard before changing scope or reloading. After a failed or
 ambiguous save, editing is blocked until configuration is reloaded so that a
 possibly successful write is not mistaken for a failed one.
 
+### Adding websites, stores or store views
+
+From 0.1.13, use **Sync Commerce scopes** on this Configuration tab after adding
+or renaming a Commerce website, store or store view:
+
+1. Save or discard any unsaved configuration. If a save was ambiguous, use
+   **Reload configuration** first to confirm the saved values.
+2. Select **Sync Commerce scopes** and wait for confirmation. The scope
+   selector and settings are disabled while synchronization runs.
+3. The dropdown updates without a page reload and preserves the selected scope
+   when it still exists; otherwise it selects Global. New scopes inherit their
+   parent settings. Review those settings before using a new storefront.
+
+**Reload configuration** reads saved settings for the selected scope; it does
+not fetch the latest Commerce hierarchy. A full browser reload reads the app's
+persisted scope tree, so it also cannot replace synchronization. Do not rely on
+a Sync control being present in Adobe's separate generic configuration page.
+
+The app's scope list is an Adobe-managed saved hierarchy, not a live list on
+every page load. Sync uses Adobe's `syncCommerceScopes` library to fetch
+`store/websites`, `store/storeGroups` and `store/storeViews` from the associated
+Commerce instance. It preserves existing scope UUIDs by Commerce ID and level,
+updates the persisted tree/cache and does not edit payment configuration values.
+Cached fallback data is treated as a sync failure, not success; the previous
+dropdown remains available and an explicit error invites retry.
+
+Sync does **not** register Azupay for additional store-view codes, change
+payment credentials, activate real-money production or add support for B2B
+purchase-order approval. Review payment-method store registration separately.
+
 The authenticated `azupay/admin-config` adapter reuses Adobe's
-`configRuntimeAction` and `scopeTreeRuntimeAction` handlers. It accepts only
-configuration GET/PATCH and scope-tree GET, preserves native storage/encryption
-and does not expose custom-scope creation, sync or deletion. Use native App
-Management to sync/manage the scope tree when needed.
+`configRuntimeAction` and `scopeTreeRuntimeAction` handlers for configuration
+GET/PATCH and scope-tree GET, plus an explicit POST `/scopes/sync` operation.
+Sync requires the same signed-in user's Azupay menu ACL; it gets the Commerce
+target from the stored association and uses only forwarded admin authentication,
+never a browser-supplied target URL or technical-account fallback. Native
+storage/encryption are preserved. Custom-scope creation and deletion remain
+unavailable through this editor.
 
 The older **Apps > App Management > Configure** route opens Experience Cloud,
 not the Commerce Admin iframe. Its missing Commerce sidebar is a host difference,

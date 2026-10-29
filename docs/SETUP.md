@@ -185,7 +185,10 @@ In Commerce Admin:
 2. Find **Azupay Real Time Payments**, associate it with your UAT Commerce instance.
 3. **Install** the app and complete its custom registration/webhook steps.
 4. Verify it is **Installed**, not Partially Installed.
-5. Open configuration and **Sync commerce scopes** if needed.
+5. Open **Sales > Azupay Real Time Payments > Configuration** and select
+   **Sync Commerce scopes** if needed (0.1.13+). Save or discard drafts first.
+   The separate generic configuration page need not provide this button.
+   **Reload configuration** rereads the selected scope's settings only.
 6. Configure at global scope or the intended store-view scope. The payment service
    resolves settings by the quote/order's numeric `store_id`, using inheritance.
 

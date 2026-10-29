@@ -272,6 +272,7 @@ test bank credentials or send real funds to UAT.
 | Multi-store configuration | Correct store scope and explicit OOPE store registration |
 | Doc/tooltips | Admin can follow profile, UAT and production guidance |
 | Current admin configuration | Retired education/approval URL/text fields absent; combined tooltip and PayTo terms fields present |
+| Commerce scope synchronization | Add a website/store/store view, then Sync Commerce scopes from the Sales-menu editor; new scopes appear, selected UUID and existing overrides survive; drafts/ambiguous saves block sync; failure is explicit and retryable; denied roles cannot synchronize |
 | White-label selector | Pay by Bank and merchant benefit text; permitted logos sized at most 100 x 48 CSS pixels; optional badge blank by default; no changed method ordering or keyboard selection |
 | Selector lifecycle | Bank branding appears even when another method is selected; native rerenders do not duplicate it; unmount disconnects observer/subscription; another cart never inherits this cart's branding |
 | Modal help | Provider-neutral heading; recovery controls under Need help with your payment?; help opens on frame/verification failure and polling pause; status check never charges and full-page link reuses the saved payment |
