@@ -103,7 +103,8 @@ export function AdminPage({ connected, client = null, connectionError = "" }) {
               After adding a website, store or store view, save or discard
               drafts and select <strong>Sync Commerce scopes</strong> in the
               Configuration tab. Reload configuration reads saved values only;
-              sync does not register payment methods for new store views.
+              sync also refreshes Azupay registration for all active, non-admin
+              store views without editing scoped payment settings.
             </li>
             <li>Enable Azupay and select Staging / UAT or Production.</li>
             <li>

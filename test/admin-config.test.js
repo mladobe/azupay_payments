@@ -28,6 +28,12 @@ describe("permission-checked native configuration adapter", () => {
   function fixture(
     authorize = async () => ({ kind: "forwarded-admin" }),
     syncResult = { synced: true, scopeTree: [{ id: "fresh-scope" }] },
+    registrationResult = {
+      paymentMethod: "azupay",
+      active: true,
+      stores: ["b2b", "default"],
+      changed: true,
+    },
   ) {
     const calls = [],
       logs = [];
@@ -49,6 +55,11 @@ describe("permission-checked native configuration adapter", () => {
         calls.push({ operation: "sync", config });
         if (syncResult instanceof Error) throw syncResult;
         return syncResult;
+      },
+      registerPaymentStores: async (auth) => {
+        calls.push({ operation: "register", auth });
+        if (registrationResult instanceof Error) throw registrationResult;
+        return registrationResult;
       },
       logError: (code) => logs.push(code),
     });
@@ -109,6 +120,12 @@ describe("permission-checked native configuration adapter", () => {
     assert.deepEqual(response.body, {
       scopes: [{ id: "fresh-scope" }],
       synced: true,
+      registration: {
+        paymentMethod: "azupay",
+        active: true,
+        stores: ["b2b", "default"],
+        changed: true,
+      },
     });
     assert.deepEqual(calls, [
       { operation: "instance" },
@@ -123,6 +140,7 @@ describe("permission-checked native configuration adapter", () => {
           fetchOptions: { timeout: 20000, retry: 0 },
         },
       },
+      { operation: "register", auth },
     ]);
   });
 
@@ -133,18 +151,40 @@ describe("permission-checked native configuration adapter", () => {
       { synced: true, scopeTree: [] },
       new Error("Private upstream detail"),
     ]) {
-      const { main, logs } = fixture(undefined, result);
+      const { main, calls, logs } = fixture(undefined, result);
       const response = await main({
         __ow_method: "post",
         __ow_path: "/scopes/sync",
       });
       assert.equal(response.statusCode, 503);
-      assert.match(
-        response.body.message,
-        /synchronization could not be confirmed/,
-      );
+      assert.match(response.body.message, /could not both be confirmed/);
       assert.doesNotMatch(JSON.stringify(response), /Private upstream/);
       assert.deepEqual(logs, ["ADMIN_CONFIG_UNAVAILABLE"]);
+      assert.ok(!calls.some((call) => call.operation === "register"));
+    }
+  });
+
+  it("reports failed registration as unconfirmed even after the hierarchy has synchronized", async () => {
+    for (const status of [403, 502]) {
+      const error = new Error("Private Commerce registration response");
+      error.response = { status };
+      const { main, calls, logs } = fixture(undefined, undefined, error);
+      const result = await main({
+        __ow_method: "post",
+        __ow_path: "/scopes/sync",
+      });
+      assert.equal(result.statusCode, status === 403 ? 403 : 503);
+      assert.equal(calls.at(-1).operation, "register");
+      assert.doesNotMatch(JSON.stringify(result), /Private Commerce/);
+      if (status === 502) {
+        assert.match(
+          result.body.message,
+          /hierarchy or registration may already have changed/,
+        );
+        assert.deepEqual(logs, ["ADMIN_CONFIG_UNAVAILABLE"]);
+      } else {
+        assert.deepEqual(logs, ["ADMIN_CONFIG_FORBIDDEN"]);
+      }
     }
   });
 
@@ -212,6 +252,7 @@ describe("permission-checked native configuration adapter", () => {
     const action =
       manifest.runtimeManifest.packages.azupay.actions["admin-config"];
     assert.equal(action.annotations["require-adobe-auth"], true);
+    assert.equal(action.limits.timeout, 120000);
     assert.equal(
       action.inputs.AIO_COMMERCE_CONFIG_ENCRYPTION_KEY,
       "$AIO_COMMERCE_CONFIG_ENCRYPTION_KEY",

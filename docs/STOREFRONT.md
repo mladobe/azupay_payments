@@ -23,6 +23,18 @@ slots. The merchant's project name, domain, repository and Runtime namespace are
 not assumed. Other/customized layouts require the manual adapter below.
 Website agnostic does not mean every checkout can be patched automatically.
 
+For an additional store view, storefront code alone cannot make the payment
+method available: Commerce's OOPE registration must cover that view's code.
+App Builder release 0.1.14 discovers active non-admin views during
+installation/the introducing upgrade and refreshes registration through
+**Sync Commerce scopes** after later store changes.
+Version 0.1.13 only registers `default` and its sync button only updates the
+hierarchy. See [adding store views](ADMIN.md#adding-websites-stores-or-store-views).
+New domains also need their exact HTTPS origins in `AZUPAY_STOREFRONT_ORIGINS`.
+Payment-store registration does not require separate content block publication;
+publish changed authored checkout content and deliver installer outputs through
+the storefront's normal Code Sync workflow.
+
 ## 2. Build or obtain the installer
 
 In the Azupay project:
@@ -33,14 +45,14 @@ node dist/eds/bin/install.js --target /absolute/path/to/storefront --dry-run
 node dist/eds/bin/install.js --target /absolute/path/to/storefront
 ```
 
-For another merchant, distribute `dist/azupay-commerce-eds-0.1.13.tgz`.
+For another merchant, distribute `dist/azupay-commerce-eds-0.1.14.tgz`.
 This archive contains a self-contained Node installer, the browser bundle and
 this guide. It contains no Adobe/Azupay credentials and needs no additional
 runtime dependencies.
 
 ```sh
 mkdir azupay-eds-installer
-tar -xzf /path/to/azupay-commerce-eds-0.1.13.tgz -C azupay-eds-installer
+tar -xzf /path/to/azupay-commerce-eds-0.1.14.tgz -C azupay-eds-installer
 node azupay-eds-installer/package/bin/install.js \
   --target /absolute/path/to/storefront --dry-run
 node azupay-eds-installer/package/bin/install.js \
@@ -62,15 +74,15 @@ The installer:
 - Creates `.azupay-eds-installation.json` with release/content hashes. Repeating
   the same installer is a no-op. Edited installed files, unmanaged Azupay code,
   changed releases, symlinked targets and unsupported layouts fail explicitly.
-  The explicit `--upgrade` option supports reviewed releases 0.1.0 through 0.1.12
-  to 0.1.13 after verifying every installed file's hash.
+  The explicit `--upgrade` option supports reviewed releases 0.1.0 through 0.1.13
+  to 0.1.14 after verifying every installed file's hash.
 
 Preflight checks all planned edits before writing. Do not run concurrent
 installers or edit checkout files during installation. Keep the installation
 manifest with the source changes. For an upgrade, review both the merchant's
 checkout changes and the new release before replacing an installation.
 
-### Upgrade an unchanged 0.1.0 through 0.1.12 installation
+### Upgrade an unchanged 0.1.0 through 0.1.13 installation
 
 ```sh
 node dist/eds/bin/install.js --target /absolute/path/to/storefront --upgrade --dry-run
@@ -134,6 +146,11 @@ schema/backend and publish all upgraded storefront files, not just the bundle.
 Version 0.1.13 adds scope synchronization to the admin editor only. The 0.1.12
 storefront browser bundle is unchanged, so no merchant reinstall or publication
 is needed for that fix. An optional installer upgrade updates its manifest.
+
+Version 0.1.14 refreshes OOPE store assignments during installation/the introducing
+upgrade and **Sync Commerce scopes**. Its browser bundle is unchanged from
+0.1.12/0.1.13: deploy the App Builder backend and admin UI, not the merchant
+storefront. Optional installer upgrades from 0.1.12/0.1.13 only update the manifest.
 
 ## 3. Review, build and publish the merchant storefront
 

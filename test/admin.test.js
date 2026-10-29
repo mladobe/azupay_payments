@@ -116,6 +116,14 @@ describe("V2 admin menu and payment identity", () => {
   });
 
   it("registers the new OOPE title without changing payment code or refund support", async () => {
+    assert.deepEqual(config.installation.customInstallationSteps, [
+      {
+        name: "Register Azupay for active store views",
+        description:
+          "Discover active Commerce store views and verify Azupay payment registration.",
+        script: "./scripts/create-payment-methods.js",
+      },
+    ]);
     const installation = await moduleFromBuild({
       entryPoints: ["scripts/create-payment-methods.js"],
       plugins: [
@@ -138,12 +146,31 @@ describe("V2 admin menu and payment identity", () => {
       ],
     });
     const requests = [];
+    let saved;
     const context = {
       params: {
         client: {
+          get: (path) => ({
+            json: async () => {
+              if (path === "store/storeViews")
+                return [
+                  { id: 0, code: "admin", is_active: 1 },
+                  { id: 1, code: "default", is_active: 1 },
+                  { id: 7, code: "b2b", is_active: true },
+                ];
+              assert.equal(path, "oope_payment_method/azupay");
+              if (!saved) {
+                const error = new Error("Not registered");
+                error.response = { status: 404 };
+                throw error;
+              }
+              return { success: true, message: saved };
+            },
+          }),
           post: (path, options) => {
             requests.push({ path, ...options.json });
-            return { json: async () => ({}) };
+            saved = options.json.payment_method;
+            return { json: async () => ({ success: true }) };
           },
         },
       },
@@ -166,6 +193,7 @@ describe("V2 admin menu and payment identity", () => {
       assert.equal(method.title, DEFAULT_CHECKOUT_TITLE);
       assert.equal(method.active, index === 0);
       assert.equal(method.order_status, "pending");
+      assert.deepEqual(method.stores, ["b2b", "default"]);
       assert.equal(
         method.custom_config.find(({ key }) => key === "can_refund").value,
         false,
@@ -199,6 +227,11 @@ describe("admin operations page", () => {
       /https:\/\/helpcentre\.azupay\.com\.au\/docs\/payto-ux-guide/,
     );
     assert.match(html, /preserves Commerce&#x27;s payment-method order/);
+    assert.match(
+      html,
+      /sync also refreshes Azupay registration for all active, non-admin/,
+    );
+    assert.doesNotMatch(html, /sync does not register payment methods/);
     assert.doesNotMatch(html, /imsToken|imsOrgId|role="alert"/);
     assert.match(
       html,

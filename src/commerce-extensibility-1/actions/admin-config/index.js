@@ -14,6 +14,7 @@ import { getForwardedImsAuthProvider } from "@adobe/aio-commerce-sdk/auth";
 import { adminConfigHandler } from "../../../shared/admin-config.js";
 import { configSchema } from "../../../shared/config-schema.js";
 import { APP_ID } from "../../../shared/identity.js";
+import { registerPaymentMethod } from "../../../shared/payment-registration.js";
 import { logError } from "../../../shared/runtime.js";
 
 export const main = adminConfigHandler({
@@ -21,6 +22,11 @@ export const main = adminConfigHandler({
   scopeAction: scopeTreeRuntimeAction,
   getCommerceInstance,
   syncScopes: syncCommerceScopes,
+  registerPaymentStores: async (auth) =>
+    registerPaymentMethod({
+      client: await getCommerceClient(auth, { timeout: 10000, retry: 0 }),
+      namespace: process.env.__OW_NAMESPACE,
+    }),
   logError,
   authorize: async (params) => {
     if (!/^Bearer \S+$/i.test(params.__ow_headers?.authorization ?? "")) {

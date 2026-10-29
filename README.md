@@ -48,7 +48,9 @@ URL/text fields were removed in 0.1.11.
 After adding a Commerce website, store or store view, save or discard drafts
 and select **Sync Commerce scopes** in this editor (0.1.13+). It refreshes the
 saved hierarchy; **Reload configuration** only rereads the selected scope's
-settings. See [scope synchronization](docs/ADMIN.md#adding-websites-stores-or-store-views).
+settings. From 0.1.14, sync also refreshes payment registration for all active,
+non-admin store views; 0.1.13 only synchronizes the hierarchy.
+See [scope synchronization](docs/ADMIN.md#adding-websites-stores-or-store-views).
 
 Use **Pay by Bank** with **Fast and secure** for a white-label presentation.
 An optional **Checkout payment badge** accepts up to 32 plain-text characters;

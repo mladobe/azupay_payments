@@ -4,6 +4,7 @@ export function adminConfigHandler({
   scopeAction,
   getCommerceInstance,
   syncScopes,
+  registerPaymentStores,
   logError,
 }) {
   return async (params) => {
@@ -51,17 +52,19 @@ export function adminConfigHandler({
           !result.scopeTree.length
         )
           throw new Error("Commerce scopes could not be synchronized.");
+        const registration = await registerPaymentStores(auth);
         return {
           statusCode: 200,
           headers,
-          body: { scopes: result.scopeTree, synced: true },
+          body: { scopes: result.scopeTree, synced: true, registration },
         };
       }
       const handler = path === "/scopes" ? scopeAction : configAction;
       const response = await handler({ ...params, __ow_path: "/" });
       return { ...response, headers: { ...response.headers, ...headers } };
     } catch (error) {
-      const statusCode = [401, 403].includes(error.status) ? error.status : 503;
+      const status = error.response?.status ?? error.status;
+      const statusCode = [401, 403].includes(status) ? status : 503;
       const code =
         statusCode === 403
           ? "ADMIN_CONFIG_FORBIDDEN"
@@ -80,7 +83,7 @@ export function adminConfigHandler({
               : statusCode === 401
                 ? "Sign in to Commerce Admin again before configuring Azupay."
                 : path === "/scopes/sync"
-                  ? "Commerce scope synchronization could not be confirmed. Retry Sync Commerce scopes. Cached scopes are not proof of a successful sync."
+                  ? "Commerce scope synchronization and payment registration could not both be confirmed. The hierarchy or registration may already have changed. Retry Sync Commerce scopes; scoped settings were not edited."
                   : "Configuration is unavailable. Reload to verify saved values before retrying.",
         },
       };

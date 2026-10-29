@@ -4,6 +4,25 @@ Changes are grouped by implementation version. These entries describe local
 development history, not previously published GitHub releases or certification.
 The first public release is pending ownership/licence approval and acceptance.
 
+## 0.1.14
+
+- Discover every active, non-admin Commerce store-view code when registering
+  Azupay, instead of hard-coding `default`. Installation, the introducing upgrade and the
+  Sales editor's **Sync Commerce scopes** operation use the same registration
+  logic; no script edits are needed when a store view is added.
+- Refresh only the existing OOPE store assignments. Preserve its active state,
+  title, integration URLs, order status, country/currency filters and custom
+  configuration, and leave all scoped payment settings unchanged. A missing
+  registration is created with the existing AUD/Australia defaults.
+- Require valid live discovery, explicit API success and verified readback.
+  Treat combined scope/registration failures as unconfirmed, explain possible
+  partial completion and allow idempotent retry. Uninstall deactivates the
+  existing method without requiring store discovery.
+- No storefront browser changes or merchant reinstall required.
+- Give the installation step a new stable name so Adobe's append-only custom-step
+  reconciliation runs it on the introducing upgrade. Later upgrades do not rerun
+  an unchanged named step; use **Sync Commerce scopes** after store changes.
+
 ## 0.1.13
 
 - Add **Sync Commerce scopes** to the embedded Sales-menu configuration editor.

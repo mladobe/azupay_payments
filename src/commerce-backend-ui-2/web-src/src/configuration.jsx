@@ -197,6 +197,18 @@ export function Configuration({ client }) {
         throw new Error(
           "Commerce returned cached scopes, not a confirmed synchronization. Retry Sync Commerce scopes.",
         );
+      if (
+        result.registration?.paymentMethod !== "azupay" ||
+        typeof result.registration.active !== "boolean" ||
+        !Array.isArray(result.registration.stores) ||
+        !result.registration.stores.length ||
+        result.registration.stores.some((code) => typeof code !== "string") ||
+        new Set(result.registration.stores).size !==
+          result.registration.stores.length
+      )
+        throw new Error(
+          "Payment-store registration was not confirmed. Retry Sync Commerce scopes after deploying the matching backend.",
+        );
       const options = scopeOptions(result);
       const selected =
         options.find((item) => item.id === scopeId) ??
@@ -205,7 +217,7 @@ export function Configuration({ client }) {
       setScopes(options);
       setScopeId(selected.id);
       setSyncNotice(
-        "Commerce scopes synchronized. Existing payment settings were not edited. New scopes inherit their parent settings; review them before enabling checkout.",
+        `Commerce scopes synchronized. Azupay registration covers ${result.registration.stores.join(", ")}.${result.registration.active ? "" : " The Commerce payment registration remains inactive."} Scoped settings were not edited. New scopes inherit their parent settings; review them before checkout.`,
       );
     } catch (failure) {
       if (controller.signal.aborted) return;
@@ -389,16 +401,17 @@ export function Configuration({ client }) {
       <p className="field-help">
         Added a website, store or store view? Save or discard changes, then
         select Sync Commerce scopes to fetch the current hierarchy from your
-        associated Commerce instance. Reload configuration reads saved values
-        for the selected scope only. Sync does not register payment methods for
-        additional store views.
+        associated Commerce instance and refresh Azupay registration for all
+        active, non-admin store views. Existing registration settings and scoped
+        Enabled/payment settings are preserved. Reload configuration reads saved
+        values for the selected scope only.
       </p>
       {busy && (
         <p role="status">
           {phase === "saving"
             ? "Saving and verifying configuration..."
             : phase === "syncing"
-              ? "Fetching current websites, stores and store views from Commerce..."
+              ? "Fetching Commerce scopes and verifying payment-store registration..."
               : "Loading configuration..."}
         </p>
       )}

@@ -41,7 +41,7 @@ export function configClient({
       });
       throw new Error(
         path === "/scopes/sync"
-          ? "Commerce scope synchronization could not be reached or timed out. Retry Sync Commerce scopes to confirm the current hierarchy."
+          ? "Commerce scope synchronization and payment registration could not be reached or timed out. Either may already have changed. Retry Sync Commerce scopes to confirm both."
           : "Configuration could not be reached. Reload saved values before retrying a save.",
       );
     }
@@ -56,7 +56,7 @@ export function configClient({
           : response.status === 403
             ? "Your Commerce role does not have permission to configure Azupay."
             : path === "/scopes/sync"
-              ? `Commerce scope synchronization failed (HTTP ${response.status}). Retry Sync Commerce scopes; existing settings have not been edited by this operation.`
+              ? `Commerce scopes and payment registration could not both be confirmed (HTTP ${response.status}). Either may already have changed. Retry Sync Commerce scopes; scoped settings were not edited.`
               : `Configuration request failed (HTTP ${response.status}). Reload saved values before retrying a save.`,
       );
     }
@@ -74,7 +74,7 @@ export function configClient({
   return {
     scopes: (signal) => call("/scopes", { signal }),
     syncScopes: (signal) =>
-      call("/scopes/sync", { method: "POST", signal, timeout: 75000 }),
+      call("/scopes/sync", { method: "POST", signal, timeout: 125000 }),
     read: (scopeId, signal) =>
       call(`/config?scopeId=${encodeURIComponent(scopeId)}&commerceEnv=saas`, {
         signal,

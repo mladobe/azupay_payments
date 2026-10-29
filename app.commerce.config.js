@@ -27,9 +27,9 @@ export default defineConfig({
   installation: {
     customInstallationSteps: [
       {
-        name: "Register Azupay payment method",
+        name: "Register Azupay for active store views",
         description:
-          "Register the AUD/Australia out-of-process payment method.",
+          "Discover active Commerce store views and verify Azupay payment registration.",
         script: "./scripts/create-payment-methods.js",
       },
     ],

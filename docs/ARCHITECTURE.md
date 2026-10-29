@@ -8,7 +8,8 @@ For installation, start with the [merchant guide](README.md).
 | --- | --- |
 | `app.commerce.config.js` | App identity, business schema, installation and SaaS webhook subscriptions |
 | `src/shared/config-schema.js` | Native admin fields and simple instructional descriptions |
-| `scripts/create-payment-methods.js` | Idempotent OOPE registration/deactivation through associated Commerce |
+| `scripts/create-payment-methods.js` | Installation/upgrade registration and uninstall deactivation through associated Commerce |
+| `src/shared/payment-registration.js` | Shared live store-view discovery, OOPE store reconciliation and verified registration readback |
 | `create-session` | Public POST: masked cart capability, trusted totals, profile selection, idempotent Azupay request |
 | `payment-status` | Public POST: signed receipt, provider reread; returns status only |
 | `checkout-branding` | Public exact-origin POST: store-code lookup and whitelist of title, byline, logos, combined instruction tooltip and PayTo terms |
@@ -44,7 +45,31 @@ target/auth overrides are not passed to sync. Commerce requests have bounded
 timeouts and no automatic retries. Cached fallback, error or empty results fail
 explicitly. A successful response updates the dropdown and reloads the selected
 scope's inherited settings, preserving selection by UUID where possible.
-Sync edits the scope hierarchy, not payment values or OOPE store registration.
+From 0.1.14, sync also calls the shared payment-registration helper
+with an associated Commerce client using that same forwarded identity. This is
+an intentional change from 0.1.13's hierarchy-only sync. Registration reads live
+`store/storeViews`, selects positive-ID, non-admin active views and updates the
+`stores` field of `oope_payment_method/azupay`. Existing writable registration
+fields, including the active flag, are preserved; a 404 alone allows creation
+with the established AUD/Australia defaults. Authorization or other read failures
+never become a new default registration.
+
+Discovery must return a valid, nonempty, unambiguous active list. POST requires
+`success: true`, followed by GET verification of the saved stores/active state.
+Matching store lists are no-ops; inactive/deleted views are removed from the
+assignments. Installation and the introducing upgrade share this helper under
+the installation identity. The step has a new stable name because Adobe's
+append-only reconciliation runs added names, not edited scripts. Later upgrades
+do not rerun this unchanged step; admins use sync after adding store views.
+Uninstall only deactivates the saved method and never depends on fresh
+store discovery. No scoped payment values are changed.
+
+Scope persistence and payment registration are not atomic. A failure at either
+stage returns an explicit unconfirmed result, not a successful combined sync;
+the browser warns that either may already have changed and offers retry. The
+admin action has a 120-second limit; the browser allows 125 seconds before
+reporting an ambiguous timeout. Registration requests have a 10-second timeout
+and no automatic retries.
 
 ## Checkout display contract
 

@@ -44,6 +44,8 @@ runtimeManifest:
           function: actions/admin-config/index.js
           web: yes
           runtime: nodejs:24
+          limits:
+            timeout: 120000
           inputs:
             AIO_COMMERCE_CONFIG_ENCRYPTION_KEY: $AIO_COMMERCE_CONFIG_ENCRYPTION_KEY
           annotations:

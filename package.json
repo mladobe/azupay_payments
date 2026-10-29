@@ -1,6 +1,6 @@
 {
   "name": "azupay-commerce-app-builder",
-  "version": "0.1.13",
+  "version": "0.1.14",
   "private": true,
   "license": "UNLICENSED",
   "description": "Azupay hosted PayID and PayTo payments for Adobe Commerce as a Cloud Service",

@@ -181,9 +181,13 @@ Never deploy the repository's GitHub CI job directly into a production tenant.
 6. Verify all three installed webhook subscriptions and Adobe authentication.
    Settlement validation must remain required; forged receipts must fail.
 
-The OOPE method registers `default` initially. For additional store codes, review
-the registration's `stores` list before installation/upgrade; configuration
-inheritance alone does not register them.
+From 0.1.14, the installation/introducing-upgrade registration step discovers
+all active, non-admin Commerce store views automatically. After adding views,
+**Sync Commerce scopes** refreshes both the hierarchy and OOPE store assignments,
+preserving all scoped settings and the existing method's other registration
+fields. No hard-coded `stores` list needs editing. Deploy the updated backend
+and admin UI first: 0.1.13 only registers `default` and its sync button only
+refreshes the hierarchy. See [adding store views](ADMIN.md#adding-websites-stores-or-store-views).
 
 **Known limitation:** some sandbox tenants persist the cart-capture subscription
 as required even though the declaration requests otherwise. An unavailable
@@ -281,7 +285,7 @@ display. The 0.1.11 schema/admin cleanup does not change that browser bundle or
 require a reinstall. Older bundles need the reviewed upgrade for the popover;
 Version 0.1.12 does require upgrading and publishing the storefront for
 white-label copy, selector branding and simplified modal controls;
-see [storefront version compatibility](STOREFRONT.md#upgrade-an-unchanged-010-through-0112-installation).
+see [storefront version compatibility](STOREFRONT.md#upgrade-an-unchanged-010-through-0113-installation).
 
 **App Builder deployment does not publish the merchant's storefront.** The normal
 EDS installation returns to the same checkout path; no new CMS return page is

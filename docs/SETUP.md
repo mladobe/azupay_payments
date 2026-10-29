@@ -192,11 +192,28 @@ In Commerce Admin:
 6. Configure at global scope or the intended store-view scope. The payment service
    resolves settings by the quote/order's numeric `store_id`, using inheritance.
 
-Installation registers the `azupay` OOPE method for AUD/Australia, initial order
-status `pending`, and the default store. For other store codes, edit the `stores`
-list in `scripts/create-payment-methods.js` before installation/upgrade. Confirm
-the registration in Commerce; configuration inheritance alone does not register
-additional stores.
+From 0.1.14, installation and the upgrade introducing this change use
+`scripts/create-payment-methods.js` to discover all active, non-admin store views
+from the associated Commerce instance. No `stores` list needs editing. A new
+`azupay` OOPE method uses AUD/Australia and initial order status `pending`;
+an existing method retains its other registration settings, including its
+active flag. The saved store list is verified through the OOPE API.
+
+This script exports an Adobe custom installation step; it is not a standalone
+`node scripts/create-payment-methods.js` command. Apply it through the supported
+App Management installation/versioned-upgrade lifecycle. The step has a new
+stable name so Adobe runs it on the introducing upgrade. Adobe does not rerun
+unchanged named custom steps on later upgrades. After installation,
+use **Sales > Azupay Real Time Payments > Configuration > Sync Commerce scopes**
+to refresh both hierarchy and registration when store views change. Deploy the
+updated backend and admin UI first: 0.1.13's button only refreshes the hierarchy
+and its registration script still targets `default`.
+
+For `b2b`, sync, confirm the success notice includes `b2b`, then inspect its
+effective **Enabled**, UAT/Production and method settings. Eligibility still
+depends on the cart's country/currency and scoped configuration. No EDS content
+publication is needed just to change store eligibility; new domains still need
+the configured HTTPS origin allowlist. B2B purchase-order approval is unsupported.
 
 The required validation webhook must map:
 

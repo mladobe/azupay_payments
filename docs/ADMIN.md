@@ -84,16 +84,41 @@ updates the persisted tree/cache and does not edit payment configuration values.
 Cached fallback data is treated as a sync failure, not success; the previous
 dropdown remains available and an explicit error invites retry.
 
-Sync does **not** register Azupay for additional store-view codes, change
-payment credentials, activate real-money production or add support for B2B
-purchase-order approval. Review payment-method store registration separately.
+**From 0.1.14:** Sync also refreshes Azupay's OOPE payment registration for
+every active, non-admin Commerce store view, including views such as `b2b`.
+There is no hard-coded store list and no need to edit the registration script.
+Global, website and store scopes are not passed as payment store codes. Views
+without their own overrides are included and continue to inherit settings.
+Inactive/deleted views are removed from the registration's store list.
+Version 0.1.13 synchronizes only the hierarchy; deploy the updated backend and
+admin UI before expecting payment-store registration from this button.
+
+Existing registration title, active state, integration URLs, order status,
+country/currency filters and custom configuration are preserved. A missing
+registration is created with the standard active AUD/Australia defaults.
+Registration is not the same as enabling a scoped payment service: review
+**Enabled**, environment and methods at the intended store-view scope. Sync
+does not edit those settings, change credentials, activate real-money production
+or add support for B2B purchase-order approval. New EDS domains still require
+the exact storefront origin allowlist and normal Code Sync publication.
+
+Success confirms both hierarchy synchronization and payment registration.
+If registration fails after the scope tree was saved, the tree may already
+have changed; if a write times out, registration may also have changed. The
+editor reports an unconfirmed operation rather than claiming success. Retry
+**Sync Commerce scopes** to read, reconcile and verify the current state.
+Discovery failures, invalid data and an empty active-store list never replace
+the registration with an empty list. A registration that was inactive stays
+inactive and is explicitly identified in the success notice.
 
 The authenticated `azupay/admin-config` adapter reuses Adobe's
 `configRuntimeAction` and `scopeTreeRuntimeAction` handlers for configuration
 GET/PATCH and scope-tree GET, plus an explicit POST `/scopes/sync` operation.
 Sync requires the same signed-in user's Azupay menu ACL; it gets the Commerce
 target from the stored association and uses only forwarded admin authentication,
-never a browser-supplied target URL or technical-account fallback. Native
+never a browser-supplied target URL or technical-account fallback. Payment-store
+registration uses that same forwarded identity and requires the user's Commerce
+API permissions to read store views and read/write OOPE payment methods. Native
 storage/encryption are preserved. Custom-scope creation and deletion remain
 unavailable through this editor.
 
