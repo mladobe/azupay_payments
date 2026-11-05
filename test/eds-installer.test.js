@@ -12,6 +12,8 @@ import {
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { it } from "node:test";
+import { runInNewContext } from "node:vm";
+import { parse } from "acorn";
 import { installEds } from "../eds/installer.js";
 
 const checkoutPath = "blocks/commerce-checkout/commerce-checkout.js";
@@ -37,6 +39,11 @@ export default async function decorate(block) {
   };
   await renderPlaceOrder(block, { handlePlaceOrder, handleValidation });
 }`;
+const purchaseOrderDeclarations = [
+  "  const isB2BEnabled = getConfigValue('commerce-b2b-enabled');\n",
+  "  let b2bIsPoEnabled = false;\n",
+  "  let b2bPoApi = null;\n",
+];
 const containers = `
 export const renderPaymentMethods = () => CheckoutProvider.render(PaymentMethods, {
   slots: { Methods: {
@@ -52,6 +59,11 @@ export const renderPlaceOrder = (container, options) => CheckoutProvider.render(
     ctx.replaceWith(span);
   } },
 });`;
+const nativePlaceOrder = `export const renderPlaceOrder = (container, options = {}) =>
+  CheckoutProvider.render(PlaceOrder, {
+    handleValidation: options.handleValidation,
+    handlePlaceOrder: options.handlePlaceOrder,
+  })(container);`;
 
 async function fixture(t, customized = false) {
   const root = await mkdtemp(join(tmpdir(), "azupay-eds-test-"));
@@ -90,6 +102,21 @@ for (const customized of [false, true]) {
     assert.equal(installed.status, "installed");
     const source = await readFile(join(options.target, checkoutPath), "utf8");
     assert.match(source, /guardAzupayPlaceOrder\(azupayNativePlaceOrder/);
+    const purchaseOrder = source.match(/purchaseOrder: \(\) => (.+),/)[1];
+    for (const enabled of [false, true]) {
+      for (const poEnabled of [false, true]) {
+        for (const api of [null, true]) {
+          assert.equal(
+            runInNewContext(purchaseOrder, {
+              isB2BEnabled: enabled,
+              b2bIsPoEnabled: poEnabled,
+              b2bPoApi: api,
+            }),
+            enabled && poEnabled && api,
+          );
+        }
+      }
+    }
     assert.match(source, /window.location.pathname/);
     assert.ok(!source.includes("\n\n\n"));
     assert.ok(!source.includes("adobecouncil"));
@@ -120,6 +147,168 @@ for (const customized of [false, true]) {
     assert.match(ignore, /^existing-generated.js/m);
   });
 }
+it("installs a B2C checkout without B2B variables and reruns unchanged", async (t) => {
+  const options = await fixture(t, true);
+  const original = await readFile(join(options.target, checkoutPath), "utf8");
+  const b2c = purchaseOrderDeclarations.reduce(
+    (source, declaration) => source.replace(declaration, ""),
+    original,
+  );
+  await writeFile(join(options.target, checkoutPath), b2c);
+  assert.equal(
+    (await installEds({ ...options, dryRun: true })).status,
+    "dry-run",
+  );
+  assert.equal(await readFile(join(options.target, checkoutPath), "utf8"), b2c);
+  assert.equal((await installEds(options)).status, "installed");
+  const source = await readFile(join(options.target, checkoutPath), "utf8");
+  assert.match(source, /guardAzupayPlaceOrder\(azupayNativePlaceOrder/);
+  assert.match(source, /merchantGuard\(handlePlaceOrder\)/);
+  const purchaseOrder = source.match(/purchaseOrder: \(\) => (.+),/)[1];
+  assert.equal(runInNewContext(purchaseOrder), false);
+  for (const name of ["isB2BEnabled", "b2bIsPoEnabled", "b2bPoApi"])
+    assert.ok(!source.includes(name));
+  assert.equal((await installEds(options)).status, "unchanged");
+});
+it("rejects incomplete B2B purchase-order layouts before changing files", async (t) => {
+  for (let mask = 1; mask < 7; mask++) {
+    const options = await fixture(t);
+    const partial = purchaseOrderDeclarations.reduce(
+      (source, declaration, index) =>
+        mask & (1 << index) ? source : source.replace(declaration, ""),
+      checkout,
+    );
+    await writeFile(join(options.target, checkoutPath), partial);
+    await assert.rejects(
+      installEds(options),
+      /Unsupported checkout: missing (isB2BEnabled|b2bIsPoEnabled|b2bPoApi)/,
+    );
+    assert.equal(
+      await readFile(join(options.target, checkoutPath), "utf8"),
+      partial,
+    );
+    assert.equal(
+      await readFile(join(options.target, containersPath), "utf8"),
+      containers,
+    );
+    assert.equal(
+      await readFile(join(options.target, initializerPath), "utf8"),
+      initializer,
+    );
+    assert.ok(
+      !(await readdir(options.target)).includes(
+        ".azupay-eds-installation.json",
+      ),
+    );
+    assert.ok(
+      !(await readdir(join(options.target, "scripts"))).includes("azupay"),
+    );
+  }
+});
+for (const existingSlots of [false, true]) {
+  it(`adds an Azupay-only button slot with ${existingSlots ? "other slots" : "native default content"} and preserves other payment labels`, async (t) => {
+    const options = await fixture(t);
+    const native = containers.slice(
+      0,
+      containers.indexOf("export const renderPlaceOrder"),
+    );
+    const order = existingSlots
+      ? nativePlaceOrder.replace(
+          "handleValidation:",
+          "slots: { Other: merchantSlot },\n    handleValidation:",
+        )
+      : nativePlaceOrder;
+    await writeFile(join(options.target, containersPath), native + order);
+    assert.equal(
+      (await installEds({ ...options, dryRun: true })).status,
+      "dry-run",
+    );
+    assert.equal(
+      await readFile(join(options.target, containersPath), "utf8"),
+      native + order,
+    );
+    await installEds(options);
+    const source = await readFile(join(options.target, containersPath), "utf8");
+    const tree = parse(source, { ecmaVersion: "latest", sourceType: "module" });
+    let content;
+    function visit(node) {
+      if (!node || typeof node !== "object") return;
+      if (node.type === "Property" && node.key.name === "Content")
+        content = node.value;
+      for (const value of Object.values(node)) {
+        if (Array.isArray(value)) value.forEach(visit);
+        else if (value && typeof value === "object") visit(value);
+      }
+    }
+    visit(tree);
+    assert.ok(content);
+    const replacements = [];
+    const slot = runInNewContext(
+      `(${source.slice(content.start, content.end)})`,
+      {
+        document: {
+          createElement: (name) => ({ tagName: name, dataset: {} }),
+        },
+        azupayButtonLabel: (_storage, label) => {
+          label.dataset.azupayOrderLabel = "";
+          return "Pay by Bank";
+        },
+      },
+    );
+    for (const code of ["", "checkmo", "payment_services_credit_card"]) {
+      slot({ code, replaceWith: (label) => replacements.push(label) });
+      assert.equal(replacements.length, 0);
+    }
+    slot({ code: "azupay", replaceWith: (label) => replacements.push(label) });
+    assert.equal(replacements.length, 1);
+    assert.equal(replacements[0].tagName, "span");
+    assert.equal(replacements[0].innerText, "Pay by Bank");
+    assert.equal(replacements[0].dataset.azupayOrderLabel, "");
+    assert.match(source, /handleValidation: options.handleValidation/);
+    assert.match(source, /handlePlaceOrder: options.handlePlaceOrder/);
+    if (existingSlots) assert.match(source, /Other: merchantSlot/);
+    assert.equal((await installEds(options)).status, "unchanged");
+  });
+}
+it("rejects unsupported existing PlaceOrder content and dynamic slots without writes", async (t) => {
+  for (const replacement of [
+    "Content: merchantContent",
+    "Content: (ctx) => document.createElement('span')",
+  ]) {
+    const options = await fixture(t);
+    const source = containers.replace(
+      /Content: \(ctx\) => \{[\s\S]*?\n  \}/,
+      replacement,
+    );
+    await writeFile(join(options.target, containersPath), source);
+    await assert.rejects(
+      installEds(options),
+      /Unsupported checkout|Unsupported PlaceOrder/,
+    );
+    assert.equal(
+      await readFile(join(options.target, checkoutPath), "utf8"),
+      checkout,
+    );
+    assert.equal(
+      await readFile(join(options.target, containersPath), "utf8"),
+      source,
+    );
+  }
+  const options = await fixture(t);
+  await writeFile(
+    join(options.target, containersPath),
+    containers.slice(0, containers.indexOf("export const renderPlaceOrder")) +
+      nativePlaceOrder.replace(
+        "handleValidation:",
+        "slots: merchantSlots,\n    handleValidation:",
+      ),
+  );
+  await assert.rejects(installEds(options), /Unsupported PlaceOrder slots/);
+  assert.equal(
+    await readFile(join(options.target, checkoutPath), "utf8"),
+    checkout,
+  );
+});
 it("dry-run performs no writes", async (t) => {
   const options = await fixture(t);
   assert.equal(

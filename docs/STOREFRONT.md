@@ -19,9 +19,24 @@ that repository.** This extension does not insert code into Luma themes.
 Automatic installation supports **Checkout drop-in 3.x and the Commerce
 boilerplate 6.x-style source layout**: separate `commerce-checkout.js` and
 `containers.js`, the standard order handler, form references and payment/button
-slots. The merchant's project name, domain, repository and Runtime namespace are
+slots. Compatible B2C layouts in newer boilerplates are also supported, including
+Checkout 3.4.0 with boilerplate 11.x and the native Place Order button without a
+custom `Content` slot. The installer adds an Azupay-only slot and leaves the
+native localized button label unchanged for other payment methods. Existing
+supported custom span-based button slots and other slots are preserved.
+The merchant's project name, domain, repository and Runtime namespace are
 not assumed. Other/customized layouts require the manual adapter below.
 Website agnostic does not mean every checkout can be patched automatically.
+
+B2C checkouts do not need the B2B purchase-order variables. If any of
+`isB2BEnabled`, `b2bIsPoEnabled` or `b2bPoApi` is present, all three are required
+to preserve the purchase-order guard. If an older installer reports
+`Unsupported checkout: missing isB2BEnabled` on a B2C site, rebuild the installer
+from the updated Azupay source and rerun the commands below; do not add dummy
+B2B variables to the storefront.
+For `Unsupported PlaceOrder.Content slot` on a checkout with no custom button
+slot, rebuild from the updated source as well. Unsupported existing custom
+content callbacks still require a reviewed manual adaptation.
 
 For an additional store view, storefront code alone cannot make the payment
 method available: Commerce's OOPE registration must cover that view's code.

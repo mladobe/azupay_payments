@@ -111,9 +111,6 @@ function patchCheckout(source) {
   const required = [
     "block",
     "events",
-    "isB2BEnabled",
-    "b2bIsPoEnabled",
-    "b2bPoApi",
     "$login",
     "$shippingForm",
     "$billToShipping",
@@ -127,6 +124,14 @@ function patchCheckout(source) {
   for (const name of required)
     if (!identifiers.has(name))
       throw new Error(`Unsupported checkout: missing ${name}.`);
+  const purchaseOrderNames = ["isB2BEnabled", "b2bIsPoEnabled", "b2bPoApi"];
+  const hasPurchaseOrder = purchaseOrderNames.some((name) =>
+    identifiers.has(name),
+  );
+  if (hasPurchaseOrder)
+    for (const name of purchaseOrderNames)
+      if (!identifiers.has(name))
+        throw new Error(`Unsupported checkout: missing ${name}.`);
   for (const name of [
     "azupayNativePlaceOrder",
     "azupayLockCart",
@@ -165,7 +170,7 @@ function patchCheckout(source) {
     },
     returnUrl: new URL(window.location.pathname, window.location.origin).href,
     confirmedOrder: () => events.lastPayload('order/placed'),
-    purchaseOrder: () => isB2BEnabled && b2bIsPoEnabled && b2bPoApi,
+    purchaseOrder: () => ${hasPurchaseOrder ? purchaseOrderNames.join(" && ") : "false"},
     lockCart: azupayLockCart,
   });`,
     },
@@ -219,46 +224,67 @@ function patchContainers(source) {
   );
   if (methods?.type !== "ObjectExpression" || property(methods, "azupay"))
     throw new Error("Unsupported or conflicting PaymentMethods.Methods slot.");
-  const content = property(
-    property(renderOptions(tree, "PlaceOrder"), "slots"),
-    "Content",
-  );
-  if (
-    content?.type !== "ArrowFunctionExpression" ||
-    content.params[0]?.type !== "Identifier"
-  )
-    throw new Error("Unsupported PlaceOrder.Content slot.");
-  const span = one(
-    content.body.body?.filter(
-      (node) =>
-        node.type === "VariableDeclaration" &&
-        node.declarations.length === 1 &&
-        node.declarations[0].init?.type === "CallExpression" &&
-        node.declarations[0].init.callee.object?.name === "document" &&
-        node.declarations[0].init.callee.property?.name === "createElement" &&
-        node.declarations[0].init.arguments[0]?.value === "span",
-    ) ?? [],
-    "PlaceOrder label span",
-  );
-  const context = content.params[0].name;
-  const label = span.declarations[0].id.name;
-  const edits = [
-    {
-      start: methods.start + 1,
-      end: methods.start + 1,
-      text: "\n        azupay: azupayPaymentSlot,",
-    },
-    {
-      start: span.end,
-      end: span.end,
-      text: `
+  const options = renderOptions(tree, "PlaceOrder");
+  if (options?.type !== "ObjectExpression")
+    throw new Error("Unsupported PlaceOrder options.");
+  const slots = property(options, "slots");
+  if (slots && slots.type !== "ObjectExpression")
+    throw new Error("Unsupported PlaceOrder slots.");
+  const content = property(slots, "Content");
+  const edits = [];
+  if (!content) {
+    const slot = `Content: (ctx) => {
+        if (ctx.code === 'azupay') {
+          const label = document.createElement('span');
+          label.innerText = azupayButtonLabel(undefined, label);
+          ctx.replaceWith(label);
+        }
+      }`;
+    edits.push({
+      start: (slots ?? options).start + 1,
+      end: (slots ?? options).start + 1,
+      text: slots
+        ? `\n      ${slot},`
+        : `\n    slots: {\n      ${slot},\n    },`,
+    });
+  } else {
+    if (
+      content.type !== "ArrowFunctionExpression" ||
+      content.params[0]?.type !== "Identifier"
+    )
+      throw new Error("Unsupported PlaceOrder.Content slot.");
+    const span = one(
+      content.body.body?.filter(
+        (node) =>
+          node.type === "VariableDeclaration" &&
+          node.declarations.length === 1 &&
+          node.declarations[0].init?.type === "CallExpression" &&
+          node.declarations[0].init.callee.object?.name === "document" &&
+          node.declarations[0].init.callee.property?.name === "createElement" &&
+          node.declarations[0].init.arguments[0]?.value === "span",
+      ) ?? [],
+      "PlaceOrder label span",
+    );
+    const context = content.params[0].name;
+    const label = span.declarations[0].id.name;
+    edits.push(
+      {
+        start: methods.start + 1,
+        end: methods.start + 1,
+        text: "\n        azupay: azupayPaymentSlot,",
+      },
+      {
+        start: span.end,
+        end: span.end,
+        text: `
         if (${context}.code === 'azupay') {
           ${label}.innerText = azupayButtonLabel(undefined, ${label});
           ${context}.replaceWith(${label});
           return;
         }`,
-    },
-  ];
+      },
+    );
+  }
   addImports(source, tree, edits, "../../scripts/azupay/client.js", [
     "azupayPaymentSlot",
     "azupayButtonLabel",

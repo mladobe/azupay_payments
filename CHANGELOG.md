@@ -6,6 +6,15 @@ The first public release is pending ownership/licence approval and acceptance.
 
 ## 0.1.14
 
+- Support automatic installation into B2C checkouts without B2B purchase-order
+  variables. Preserve the guard on B2B layouts and reject incomplete B2B inputs
+  before writing any files. Rebuild the installer for new B2C installations;
+  existing browser bundles and installations are unchanged.
+- Install an Azupay-only Place Order content slot when the checkout uses the
+  native default button, including compatible boilerplate 11.x B2C layouts with
+  Checkout 3.4.0. Preserve native localized labels for other payment methods,
+  existing slots and validation/order handlers. Rebuild the installer for new
+  installations; existing installed files do not need an upgrade.
 - Discover every active, non-admin Commerce store-view code when registering
   Azupay, instead of hard-coding `default`. Installation, the introducing upgrade and the
   Sales editor's **Sync Commerce scopes** operation use the same registration
